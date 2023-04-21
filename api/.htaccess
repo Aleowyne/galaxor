@@ -1,0 +1,4 @@
+RewriteEngine On
+RewriteRule ^/?([a-z/]+)$ index.php/$1 [L]
+RewriteRule /([A-Z0-9]+)/.*/([A-Z0-9]+) index.php?one=$1&two=$2 [L]
+RewriteRule /([A-Z0-9]+) index.php?one=$1
