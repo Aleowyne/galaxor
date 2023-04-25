@@ -26,11 +26,15 @@ class UserController extends BaseController {
    * @param string $uri URI
    * @return void
    */
-  public function processRequest(string $uri) {
-    /* Endpoints : 
-      - /api/users
-      - /api/users/:id */
-    if (preg_match("/\/api\/users(\/[0-9]*)?$/", $uri)) {
+  public function processRequest(string $uri): void {
+    /* Endpoint /api/users/:id */
+    if (preg_match("/\/api\/users\/[0-9]*$/", $uri)) {
+      $this->getUser();
+      return;
+    }
+
+    /* Endpoint /api/users */
+    if (preg_match("/\/api\/users$/", $uri)) {
       $this->getUsers();
       return;
     }
@@ -57,31 +61,37 @@ class UserController extends BaseController {
   }
 
   /**
-   * Récupération d'un ou plusieurs utilisateurs
+   * Récupération d'un utilisateur
    *
    * @return void
    */
-  private function getUsers() {
-    $userId = (int) $this->params[0];
-
-    if ($this->requestMethod != "GET") {
-      $error = array("error" => "Method not supported");
-      $this->sendResponse("HTTP/1.1 422 Unprocessable Entity", $error);
+  private function getUser(): void {
+    if (!$this->checkMethod($this->requestMethod, ['GET'])) {
       return;
     }
 
-    // Récupération des données d'un utilisateur
-    if ($userId != 0) {
-      $result = $this->userModel->findOne(["id" => $userId]);
+    $userId = ["id" => (int) $this->params[0]];
 
-      if (!$result) {
-        $this->sendResponse("HTTP/1.1 404 Not Found");
-        return;
-      }
-      // Récupération des données de tous les utilisateurs
+    $result = $this->userModel->findOne($userId);
+
+    if ($result) {
+      $this->sendResponse("HTTP/1.1 200 OK", $result);
     } else {
-      $result = $this->userModel->findAll();
-    };
+      $this->sendResponse("HTTP/1.1 404 Not Found");
+    }
+  }
+
+  /**
+   * Récupération de plusieurs utilisateurs
+   *
+   * @return void
+   */
+  private function getUsers(): void {
+    if (!$this->checkMethod($this->requestMethod, ['GET'])) {
+      return;
+    }
+
+    $result = $this->userModel->findAll();
 
     $this->sendResponse("HTTP/1.1 200 OK", $result);
   }
@@ -91,33 +101,36 @@ class UserController extends BaseController {
    *
    * @return void
    */
-  private function registerUser() {
-    if ($this->requestMethod != "POST") {
-      $error = array("error" => "Method not supported");
-      $this->sendResponse("HTTP/1.1 422 Unprocessable Entity", $error);
+  private function registerUser(): void {
+    if (!$this->checkMethod($this->requestMethod, ['POST'])) {
       return;
     }
 
     // Données de l'utilisateur non valides
     if (!$this->validateUserRegister($this->body)) {
-      $error = array("error" => "Invalid body");
-      $this->sendResponse("HTTP/1.1 422 Unprocessable Entity", $error);
+      $this->invalidBody();
       return;
     }
+
+    $username = ["name" => $this->body["name"]];
 
     // Utilisateur déjà enregistré
-    if ($this->userModel->findOne(["name" => $this->body["name"]])) {
-      $error = array("error" => "Invalid body");
-      $this->sendResponse("HTTP/1.1 422 Unprocessable Entity", $error);
+    if ($this->userModel->findOne($username)) {
+      $this->invalidBody();
       return;
     }
 
-    $result = $this->userModel->insertOne($this->body);
+    $user = [
+      "name" => $this->body["name"],
+      "password" => password_hash($this->body["password"], PASSWORD_DEFAULT)
+    ];
 
-    if (!$result) {
-      $this->sendResponse("HTTP/1.1 500 Internal Server Error");
-    } else {
+    $id = $this->userModel->insertOne($user);
+
+    if ($id != 0) {
       $this->sendResponse("HTTP/1.1 201 Created");
+    } else {
+      $this->sendResponse("HTTP/1.1 500 Internal Server Error");
     }
   }
 
@@ -126,28 +139,28 @@ class UserController extends BaseController {
    *
    * @return void
    */
-  private function login() {
-    if ($this->requestMethod != "POST") {
-      $error = array("error" => "Method not supported");
-      $this->sendResponse("HTTP/1.1 422 Unprocessable Entity", $error);
+  private function login(): void {
+    if (!$this->checkMethod($this->requestMethod, ['POST'])) {
       return;
     }
 
     // Données de l'utilisateur non valide
     if (!$this->validateUserLogin($this->body)) {
-      $error = array("error" => "Invalid body");
-      $this->sendResponse("HTTP/1.1 422 Unprocessable Entity", $error);
+      $this->invalidBody();
       return;
     }
 
-    $userId = $this->userModel->login($this->body);
+    $username = ["name" => $this->body["name"]];
 
-    if ($userId == 0) {
-      $this->sendResponse("HTTP/1.1 404 Not Found");
-    } else {
+    $result = $this->userModel->login($username);
+
+    // Contrôle du mot de passe
+    if (isset($result[0]["password"]) && password_verify($this->body["password"], $result[0]["password"])) {
       $this->sendResponse("HTTP/1.1 200 OK");
-      $_SESSION["id"] = $userId;
+      $_SESSION["id"] = $result[0]["id"];
       $_SESSION["name"] = $this->body["name"];
+    } else {
+      $this->sendResponse("HTTP/1.1 404 Not Found");
     }
   }
 
@@ -156,10 +169,8 @@ class UserController extends BaseController {
    *
    * @return void
    */
-  private function logout() {
-    if ($this->requestMethod != "POST") {
-      $error = array("error" => "Method not supported");
-      $this->sendResponse("HTTP/1.1 422 Unprocessable Entity", $error);
+  private function logout(): void {
+    if (!$this->checkMethod($this->requestMethod, ['POST'])) {
       return;
     }
 
@@ -174,7 +185,7 @@ class UserController extends BaseController {
    * @param array $body Données de l'utilisateur
    * @return boolean Flag indiquant si les données sont valides
    */
-  private function validateUserRegister($body) {
+  private function validateUserRegister($body): bool {
     if (
       isset($body["name"]) && isset($body["password"]) && isset($body["mail_address"])
       && $body["name"] !== "" && $body["password"] !== "" && $body["mail_address"] !== ""
@@ -191,7 +202,7 @@ class UserController extends BaseController {
    * @param array $body Données de l'utilisateur
    * @return boolean Flag indiquant si les données sont valides
    */
-  private function validateUserLogin($body) {
+  private function validateUserLogin($body): bool {
     if (
       isset($body["name"]) && isset($body["password"])
       && $body["name"] !== "" && $body["password"] !== ""

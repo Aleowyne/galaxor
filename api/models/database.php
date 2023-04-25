@@ -1,8 +1,8 @@
 <?php
 
 class Database {
-
   private $connection = null;
+  private $lastIds = [];
 
   public function __construct() {
     $host = DB_HOST;
@@ -31,7 +31,7 @@ class Database {
    *
    * @param string $query Requête
    * @param array $params Paramètres de la requête
-   * @return array|false Réponse de la requête
+   * @return array Réponse de la requête
    */
   public function select($query = "", $params = []) {
     try {
@@ -39,7 +39,7 @@ class Database {
       $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
       $stmt->closeCursor();
 
-      return $result;
+      return empty($result) ? [] : $result;
     } catch (Exception $e) {
       throw $e;
     }
@@ -50,12 +50,12 @@ class Database {
    *
    * @param string $query Requête
    * @param array $params Paramètres de la requête
-   * @return string|false Réponse de la requête
+   * @return array Liste des IDs insérés
    */
   public function insert($query = "", $params = []) {
     try {
       $stmt = $this->executeStatement($query, $params);
-      $result = $this->connection->lastInsertId();
+      $result = $this->lastIds;
       $stmt->closeCursor();
 
       return $result;
@@ -68,36 +68,29 @@ class Database {
    * Exécution d'une requête
    *
    * @param string $query Requête
-   * @param array|false $params Paramètres de la requête
-   * @return PDOStatement|false Requête préparée
+   * @param array $params Paramètres de la requête
+   * @return PDOStatement Requête préparée
    */
   private function executeStatement($query = "", $params = []) {
     try {
+      $this->lastIds = [];
       $stmt = $this->connection->prepare($query);
-      $type = PDO::PARAM_STR;
 
       if ($stmt === false) {
-        throw new Exception("Unable to do prepared statement: " . $query);
+        throw new Exception("Unable to do prepared statement: $query");
       }
 
-      foreach ($params as $key => $value) {
-        switch (gettype($key)) {
-          case "integer":
-            $type = PDO::PARAM_INT;
-            break;
-
-          case "boolean":
-            $type = PDO::PARAM_BOOL;
-            break;
-
-          default:
-            $type = PDO::PARAM_STR;
-        }
-
-        $stmt->bindValue($key, $value, $type);
+      // Pas de paramètre
+      if (!$params) {
+        $stmt->execute();
+        return $stmt;
       }
 
-      $stmt->execute();
+      // Au moins un paramètre
+      foreach ($params as $param) {
+        $stmt->execute($param);
+        array_push($this->lastIds, (int) $this->connection->lastInsertId());
+      }
 
       return $stmt;
     } catch (Exception $e) {
