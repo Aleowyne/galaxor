@@ -22,10 +22,6 @@ class Database {
     }
   }
 
-  public function getConnection() {
-    return $this->connection;
-  }
-
   /**
    * Requête de sélection sur la base de données
    *
@@ -33,7 +29,7 @@ class Database {
    * @param array $params Paramètres de la requête
    * @return array Réponse de la requête
    */
-  public function select($query = "", $params = []) {
+  public function select(string $query = "", array $params = []): array {
     try {
       $stmt = $this->executeStatement($query, $params);
       $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -52,7 +48,7 @@ class Database {
    * @param array $params Paramètres de la requête
    * @return array Liste des IDs insérés
    */
-  public function insert($query = "", $params = []) {
+  public function insert(string $query = "", array $params = []): array {
     try {
       $stmt = $this->executeStatement($query, $params);
       $result = $this->lastIds;
@@ -65,13 +61,32 @@ class Database {
   }
 
   /**
+   * Requête de mise à jour sur la base de données
+   *
+   * @param string $query Requête
+   * @param array $params Paramètres de la requête
+   * @return boolean Flag indiquant si la mise à jour a réussi
+   */
+  public function update(string $query = "", array $params = []): bool {
+    try {
+      $stmt = $this->executeStatement($query, $params);
+      $result = $stmt->rowCount();
+      $stmt->closeCursor();
+
+      return $result === 0 ? false : true;
+    } catch (Exception $e) {
+      throw $e;
+    }
+  }
+
+  /**
    * Exécution d'une requête
    *
    * @param string $query Requête
    * @param array $params Paramètres de la requête
    * @return PDOStatement Requête préparée
    */
-  private function executeStatement($query = "", $params = []) {
+  private function executeStatement(string $query = "", array $params = []): PDOStatement {
     try {
       $this->lastIds = [];
       $stmt = $this->connection->prepare($query);

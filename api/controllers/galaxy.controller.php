@@ -35,7 +35,7 @@ class GalaxyController extends BaseController {
 
     /* Endpoint /api/universes/:id/galaxies */
     if (preg_match("/\/api\/universes\/[0-9]*\/galaxies$/", $uri)) {
-      $this->getGalaxiesFromUniverse();
+      $this->getGalaxiesByUniverse();
       return;
     }
 
@@ -68,14 +68,14 @@ class GalaxyController extends BaseController {
    *
    * @return void
    */
-  private function getGalaxiesFromUniverse(): void {
+  private function getGalaxiesByUniverse(): void {
     if (!$this->checkMethod($this->requestMethod, ['GET'])) {
       return;
     }
 
     $universeId = ["universe_id" => (int) $this->params[0]];
 
-    $result = $this->galaxyModel->findAllFromUniverse($universeId);
+    $result = $this->galaxyModel->findAllByUniverse($universeId);
 
     if ($result) {
       $this->sendResponse("HTTP/1.1 200 OK", $result);

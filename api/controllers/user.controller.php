@@ -72,7 +72,7 @@ class UserController extends BaseController {
 
     $userId = ["id" => (int) $this->params[0]];
 
-    $result = $this->userModel->findOne($userId);
+    $result = $this->userModel->findOneById($userId);
 
     if ($result) {
       $this->sendResponse("HTTP/1.1 200 OK", $result);
@@ -107,28 +107,30 @@ class UserController extends BaseController {
     }
 
     // Données de l'utilisateur non valides
-    if (!$this->validateUserRegister($this->body)) {
+    if (!$this->checkUserRegister($this->body)) {
       $this->invalidBody();
       return;
     }
 
+    $mailAddress = ["mail_address" => $this->body["mail_address"]];
     $username = ["name" => $this->body["name"]];
 
     // Utilisateur déjà enregistré
-    if ($this->userModel->findOne($username)) {
+    if ($this->userModel->findOneByAddress($mailAddress) || $this->userModel->findOneByName($username)) {
       $this->invalidBody();
       return;
     }
 
     $user = [
       "name" => $this->body["name"],
+      "mail_address" => $this->body["mail_address"],
       "password" => password_hash($this->body["password"], PASSWORD_DEFAULT)
     ];
 
-    $id = $this->userModel->insertOne($user);
+    $userId = $this->userModel->insertOne($user);
 
-    if ($id != 0) {
-      $this->sendResponse("HTTP/1.1 201 Created");
+    if ($userId != 0) {
+      $this->sendResponse("HTTP/1.1 201 Created", ["id" => $userId]);
     } else {
       $this->sendResponse("HTTP/1.1 500 Internal Server Error");
     }
@@ -145,20 +147,25 @@ class UserController extends BaseController {
     }
 
     // Données de l'utilisateur non valide
-    if (!$this->validateUserLogin($this->body)) {
+    if (!$this->checkUserLogin($this->body)) {
       $this->invalidBody();
       return;
     }
 
-    $username = ["name" => $this->body["name"]];
+    $mailAddress = ["mail_address" => $this->body["mail_address"]];
 
-    $result = $this->userModel->login($username);
+    $result = $this->userModel->login($mailAddress);
 
     // Contrôle du mot de passe
-    if (isset($result[0]["password"]) && password_verify($this->body["password"], $result[0]["password"])) {
-      $this->sendResponse("HTTP/1.1 200 OK");
-      $_SESSION["id"] = $result[0]["id"];
-      $_SESSION["name"] = $this->body["name"];
+    if ($this->checkPassword($this->body["password"], $result[0]["password"] ?? "")) {
+      $user = [
+        "id" => $result[0]["id"],
+        "name" => $result[0]["name"]
+      ];
+
+      $this->sendResponse("HTTP/1.1 200 OK", $user);
+      $_SESSION["id"] = $user["id"];
+      $_SESSION["name"] = $user["name"];
     } else {
       $this->sendResponse("HTTP/1.1 404 Not Found");
     }
@@ -180,36 +187,33 @@ class UserController extends BaseController {
   }
 
   /**
-   * Validation des données de l'utilisateur à l'enregistrement
+   * Contrôle des données de l'utilisateur à l'enregistrement
    *
    * @param array $body Données de l'utilisateur
    * @return boolean Flag indiquant si les données sont valides
    */
-  private function validateUserRegister($body): bool {
-    if (
-      isset($body["name"]) && isset($body["password"]) && isset($body["mail_address"])
-      && $body["name"] !== "" && $body["password"] !== "" && $body["mail_address"] !== ""
-    ) {
-      return true;
-    }
-
-    return false;
+  private function checkUserRegister(array $body): bool {
+    return ($body["name"] ?? false) && ($body["password"] ?? false) && ($body["mail_address"] ?? false);
   }
 
   /**
-   * Validation des données de l'utilisateur à la connexion
+   * Contrôle des données de l'utilisateur à la connexion
    *
    * @param array $body Données de l'utilisateur
    * @return boolean Flag indiquant si les données sont valides
    */
-  private function validateUserLogin($body): bool {
-    if (
-      isset($body["name"]) && isset($body["password"])
-      && $body["name"] !== "" && $body["password"] !== ""
-    ) {
-      return true;
-    }
+  private function checkUserLogin(array $body): bool {
+    return ($body["mail_address"] ?? false) && ($body["password"] ?? false);
+  }
 
-    return false;
+  /**
+   * Contrôle du mot de passe
+   *
+   * @param string $password Mot de passe saisi
+   * @param string $passDatabase Mot de passe en base
+   * @return boolean Flag indiquant si le mot de passe saisi est correct
+   */
+  private function checkPassword($password, $passDatabase): bool {
+    return password_verify($password, $passDatabase);
   }
 }

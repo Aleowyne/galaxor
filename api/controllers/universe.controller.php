@@ -114,7 +114,7 @@ class UniverseController extends BaseController {
     $planetcontroller->createPlanets();
 
     if ($universeId != 0) {
-      $this->sendResponse("HTTP/1.1 201 Created");
+      $this->sendResponse("HTTP/1.1 201 Created", ["id" => $universeId]);
     } else {
       $this->sendResponse("HTTP/1.1 500 Internal Server Error");
     }

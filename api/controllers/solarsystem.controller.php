@@ -35,7 +35,7 @@ class SolarSystemController extends BaseController {
 
     /* Endpoint /api/galaxies/:id/solarsystems */
     if (preg_match("/\/api\/galaxies\/[0-9]*\/solarsystems$/", $uri)) {
-      $this->getSolarSystemsFromGalaxy();
+      $this->getSolarSystemsByGalaxy();
       return;
     }
 
@@ -68,14 +68,14 @@ class SolarSystemController extends BaseController {
    *
    * @return void
    */
-  private function getSolarSystemsFromGalaxy(): void {
+  private function getSolarSystemsByGalaxy(): void {
     if (!$this->checkMethod($this->requestMethod, ['GET'])) {
       return;
     }
 
     $galaxyId = ["galaxy_id" => (int) $this->params[0]];
 
-    $result = $this->solarSystemModel->findAllFromGalaxy($galaxyId);
+    $result = $this->solarSystemModel->findAllByGalaxy($galaxyId);
 
     if ($result) {
       $this->sendResponse("HTTP/1.1 200 OK", $result);

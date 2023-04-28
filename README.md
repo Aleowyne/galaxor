@@ -10,6 +10,8 @@ Galaxor est un jeu de stratégie en ligne dans lequel chaque participant tente d
 
 Ce jeu est réalisé en Javascript et PHP sans framework, et se base sur le projet étudiant ESIREM galactique.
 
+Le sujet est présenté dans le fichier `ESIREM_Galactique.pdf`.
+
 <br/>
 
 ## Configuration

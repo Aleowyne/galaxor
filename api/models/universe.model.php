@@ -29,7 +29,7 @@ class UniverseModel extends Database {
    * @param array $params Nom de l'univers
    * @return integer ID de l'univers
    */
-  public function insertOne($params): int {
+  public function insertOne(array $params): int {
     $ids = $this->insert(
       "INSERT INTO universe (name) VALUES (:name)",
       [$params]

@@ -5,15 +5,12 @@ class BaseController {
    * Affichage de la réponse de l'API
    *
    * @param string $header Entête de la réponse
-   * @param mixed $body Contenu de la réponse
+   * @param array $body Contenu de la réponse
    * @return void
    */
-  protected function sendResponse(string $header, mixed $body = null): void {
+  protected function sendResponse(string $header, mixed $body = []): void {
     header($header);
-
-    if ($body) {
-      echo json_encode($body);
-    }
+    echo json_encode($body);
   }
 
   /**

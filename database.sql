@@ -138,6 +138,13 @@ CREATE TABLE IF NOT EXISTS fight_item (
   FOREIGN KEY (item_id) REFERENCES planet_item(id)
 );
 
+DELIMITER $$
+CREATE TRIGGER `after_planet_update` AFTER UPDATE ON `planet`
+  FOR EACH ROW BEGIN
+  DELETE FROM planet_resource WHERE planet_id = NEW.id;
+  DELETE FROM planet_item WHERE planet_id = NEW.id;
+END $$
+DELIMITER ;
 
 INSERT INTO resource(name) VALUES 
   ('Métal'), ('Deutérium'), ('Energie'); 
