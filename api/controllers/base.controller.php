@@ -6,48 +6,30 @@ class BaseController {
    *
    * @param string $header Entête de la réponse
    * @param array $body Contenu de la réponse
-   * @return void
    */
   protected function sendResponse(string $header, mixed $body = []): void {
     header($header);
     echo json_encode($body);
   }
 
+
   /**
    * Réponse de l'API : Méthode non supportée
-   *
-   * @return void
    */
   protected function methodNotSupported(): void {
     $error = array("error" => "Method not supported");
     $this->sendResponse("HTTP/1.1 405 Method Not Allowed", $error);
   }
 
+
   /**
    * Réponse de l'API : Contenu de la requête non valide
-   *
-   * @return void
    */
   protected function invalidBody(): void {
     $error = array("error" => "Invalid body");
     $this->sendResponse("HTTP/1.1 422 Unprocessable Entity", $error);
   }
 
-  /**
-   * Contrôle des méthodes
-   *
-   * @param string $requestMethod Méthode de la requête
-   * @param array $methodsSupported Liste des méthodes autorisées
-   * @return boolean Flag indiquant si la méthode est valide
-   */
-  protected function checkMethod(string $requestMethod, array $methodsSupported): bool {
-    if (in_array($requestMethod, $methodsSupported)) {
-      return true;
-    }
-
-    $this->methodNotSupported();
-    return false;
-  }
 
   /**
    * Génération de noms aléatoires

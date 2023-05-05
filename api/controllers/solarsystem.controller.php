@@ -20,41 +20,48 @@ class SolarSystemController extends BaseController {
     $this->body = $body;
   }
 
+
   /**
    * Traitement de la requête
    *
    * @param string $uri URI
-   * @return void
    */
   public function processRequest(string $uri): void {
     /* Endpoint /api/solarsystems/:id */
     if (preg_match("/\/api\/solarsystems\/[0-9]*$/", $uri)) {
-      $this->getSolarSystem();
+      switch ($this->requestMethod) {
+        case "GET":
+          $this->getSolarSystem();
+          break;
+        default:
+          $this->methodNotSupported();
+      }
       return;
     }
 
     /* Endpoint /api/galaxies/:id/solarsystems */
     if (preg_match("/\/api\/galaxies\/[0-9]*\/solarsystems$/", $uri)) {
-      $this->getSolarSystemsByGalaxy();
+      switch ($this->requestMethod) {
+        case "GET":
+          $this->getSolarSystemsByGalaxy();
+          break;
+        default:
+          $this->methodNotSupported();
+      }
       return;
     }
 
     $this->sendResponse("HTTP/1.1 404 Not Found");
   }
 
+
   /**
    * Récupération d'un système solaire
-   *
-   * @return void
    */
   private function getSolarSystem(): void {
-    if (!$this->checkMethod($this->requestMethod, ['GET'])) {
-      return;
-    }
+    $this->solarSystemModel->setId($this->params[0] ?? 0);
 
-    $solarSystemId = ["id" => (int) $this->params[0]];
-
-    $result = $this->solarSystemModel->findOne($solarSystemId);
+    $result = $this->solarSystemModel->findOne();
 
     if ($result) {
       $this->sendResponse("HTTP/1.1 200 OK", $result);
@@ -62,20 +69,15 @@ class SolarSystemController extends BaseController {
       $this->sendResponse("HTTP/1.1 404 Not Found");
     }
   }
+
 
   /**
    * Récupération des systèmes solaires d'une galaxie
-   *
-   * @return void
    */
   private function getSolarSystemsByGalaxy(): void {
-    if (!$this->checkMethod($this->requestMethod, ['GET'])) {
-      return;
-    }
+    $this->solarSystemModel->setGalaxyId($this->params[0] ?? 0);
 
-    $galaxyId = ["galaxy_id" => (int) $this->params[0]];
-
-    $result = $this->solarSystemModel->findAllByGalaxy($galaxyId);
+    $result = $this->solarSystemModel->findAllByGalaxy();
 
     if ($result) {
       $this->sendResponse("HTTP/1.1 200 OK", $result);
@@ -83,6 +85,7 @@ class SolarSystemController extends BaseController {
       $this->sendResponse("HTTP/1.1 404 Not Found");
     }
   }
+
 
   /**
    * Création de systèmes solaires pour plusieurs galaxies
@@ -90,22 +93,15 @@ class SolarSystemController extends BaseController {
    * @return array Liste des ID des systèmes solaires
    */
   public function createSolarSystems(): array {
-    $solarSystems = [];
-
     foreach ($this->params as $galaxyId) {
+      // Génération du nom des systèmes solaires
       $names = $this->randomName(10);
 
       foreach ($names as $name) {
-        array_push(
-          $solarSystems,
-          [
-            "galaxy_id" => $galaxyId,
-            "name" => $name
-          ]
-        );
+        $this->solarSystemModel->addName($name, $galaxyId);
       }
     }
 
-    return $this->solarSystemModel->insertMultiples($solarSystems);
+    return $this->solarSystemModel->insertMultiples();
   }
 }

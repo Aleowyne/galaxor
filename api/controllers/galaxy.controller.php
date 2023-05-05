@@ -20,41 +20,48 @@ class GalaxyController extends BaseController {
     $this->body = $body;
   }
 
+
   /**
    * Traitement de la requête
    *
    * @param string $uri URI
-   * @return void
    */
   public function processRequest(string $uri): void {
     /* Endpoint /api/galaxies/:id */
     if (preg_match("/\/api\/galaxies\/[0-9]*$/", $uri)) {
-      $this->getGalaxy();
+      switch ($this->requestMethod) {
+        case "GET":
+          $this->getGalaxy();
+          break;
+        default:
+          $this->methodNotSupported();
+      }
       return;
     }
 
     /* Endpoint /api/universes/:id/galaxies */
     if (preg_match("/\/api\/universes\/[0-9]*\/galaxies$/", $uri)) {
-      $this->getGalaxiesByUniverse();
+      switch ($this->requestMethod) {
+        case "GET":
+          $this->getGalaxiesByUniverse();
+          break;
+        default:
+          $this->methodNotSupported();
+      }
       return;
     }
 
     $this->sendResponse("HTTP/1.1 404 Not Found");
   }
 
+
   /**
    * Récupération d'une galaxie
-   *
-   * @return void
    */
   private function getGalaxy(): void {
-    if (!$this->checkMethod($this->requestMethod, ['GET'])) {
-      return;
-    }
+    $this->galaxyModel->setId($this->params[0] ?? 0);
 
-    $galaxyId = ["id" => (int) $this->params[0]];
-
-    $result = $this->galaxyModel->findOne($galaxyId);
+    $result = $this->galaxyModel->findOne();
 
     if ($result) {
       $this->sendResponse("HTTP/1.1 200 OK", $result);
@@ -62,20 +69,15 @@ class GalaxyController extends BaseController {
       $this->sendResponse("HTTP/1.1 404 Not Found");
     }
   }
+
 
   /**
    * Récupération des galaxies d'un univers
-   *
-   * @return void
    */
   private function getGalaxiesByUniverse(): void {
-    if (!$this->checkMethod($this->requestMethod, ['GET'])) {
-      return;
-    }
+    $this->galaxyModel->setUniverseId($this->params[0] ?? 0);
 
-    $universeId = ["universe_id" => (int) $this->params[0]];
-
-    $result = $this->galaxyModel->findAllByUniverse($universeId);
+    $result = $this->galaxyModel->findAllByUniverse();
 
     if ($result) {
       $this->sendResponse("HTTP/1.1 200 OK", $result);
@@ -83,6 +85,7 @@ class GalaxyController extends BaseController {
       $this->sendResponse("HTTP/1.1 404 Not Found");
     }
   }
+
 
   /**
    * Création de galaxies pour un univers
@@ -90,21 +93,15 @@ class GalaxyController extends BaseController {
    * @return array Liste des ID des galaxies
    */
   public function createGalaxies(): array {
-    $galaxies = [];
-    $universeId = (int) $this->params[0];
+    $this->galaxyModel->setUniverseId($this->params[0] ?? 0);
 
+    // Génération du nom des galaxies
     $names = $this->randomName(5);
 
     foreach ($names as $name) {
-      array_push(
-        $galaxies,
-        [
-          "universe_id" => $universeId,
-          "name" => $name
-        ]
-      );
+      $this->galaxyModel->addName($name);
     }
 
-    return $this->galaxyModel->insertMultiples($galaxies);
+    return $this->galaxyModel->insertMultiples();
   }
 }

@@ -3,6 +3,7 @@
 class Database {
   private $connection = null;
   private $lastIds = [];
+  private $nbRows = 0;
 
   public function __construct() {
     $host = DB_HOST;
@@ -21,6 +22,7 @@ class Database {
       throw $e;
     }
   }
+
 
   /**
    * Requête de sélection sur la base de données
@@ -41,6 +43,7 @@ class Database {
     }
   }
 
+
   /**
    * Requête d'insertion sur la base de données
    *
@@ -60,6 +63,7 @@ class Database {
     }
   }
 
+
   /**
    * Requête de mise à jour sur la base de données
    *
@@ -70,14 +74,14 @@ class Database {
   public function update(string $query = "", array $params = []): bool {
     try {
       $stmt = $this->executeStatement($query, $params);
-      $result = $stmt->rowCount();
       $stmt->closeCursor();
 
-      return $result === 0 ? false : true;
+      return $this->nbRows === 0 ? false : true;
     } catch (Exception $e) {
       throw $e;
     }
   }
+
 
   /**
    * Exécution d'une requête
@@ -89,6 +93,8 @@ class Database {
   private function executeStatement(string $query = "", array $params = []): PDOStatement {
     try {
       $this->lastIds = [];
+      $this->nbRows = 0;
+
       $stmt = $this->connection->prepare($query);
 
       if ($stmt === false) {
@@ -98,13 +104,19 @@ class Database {
       // Pas de paramètre
       if (!$params) {
         $stmt->execute();
+
+        array_push($this->lastIds, (int) $this->connection->lastInsertId());
+        $this->nbRows += $stmt->rowCount();
+
         return $stmt;
       }
 
       // Au moins un paramètre
       foreach ($params as $param) {
         $stmt->execute($param);
+
         array_push($this->lastIds, (int) $this->connection->lastInsertId());
+        $this->nbRows += $stmt->rowCount();
       }
 
       return $stmt;

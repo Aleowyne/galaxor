@@ -1,5 +1,7 @@
 <?php
 
+date_default_timezone_set('Europe/Paris');
+
 session_start();
 
 define("DB_HOST", "localhost");

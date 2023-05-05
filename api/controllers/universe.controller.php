@@ -20,16 +20,22 @@ class UniverseController extends BaseController {
     $this->body = $body;
   }
 
+
   /**
    * Traitement de la requête
    *
    * @param string $uri URI
-   * @return void
    */
   public function processRequest(string $uri): void {
     /* Endpoint /api/universes/:id */
     if (preg_match("/\/api\/universes\/[0-9]*$/", $uri)) {
-      $this->getUniverse();
+      switch ($this->requestMethod) {
+        case "GET":
+          $this->getUniverse();
+          break;
+        default:
+          $this->methodNotSupported();
+      }
       return;
     }
 
@@ -51,19 +57,14 @@ class UniverseController extends BaseController {
     $this->sendResponse("HTTP/1.1 404 Not Found");
   }
 
+
   /**
    * Récupération d'un univers
-   *
-   * @return void
    */
   private function getUniverse(): void {
-    if (!$this->checkMethod($this->requestMethod, ['GET'])) {
-      return;
-    }
+    $this->universeModel->setId($this->params[0] ?? 0);
 
-    $universeId = ["id" => (int) $this->params[0]];
-
-    $result = $this->universeModel->findOne($universeId);
+    $result = $this->universeModel->findOne();
 
     if ($result) {
       $this->sendResponse("HTTP/1.1 200 OK", $result);
@@ -72,37 +73,29 @@ class UniverseController extends BaseController {
     }
   }
 
+
   /**
    * Récupération de plusieurs univers
-   *
-   * @return void
    */
   private function getUniverses(): void {
-    if (!$this->checkMethod($this->requestMethod, ['GET'])) {
-      return;
-    }
-
     $result = $this->universeModel->findAll();
 
     $this->sendResponse("HTTP/1.1 200 OK", $result);
   }
 
+
   /**
    * Création d'un univers
-   *
-   * @return void
    */
   private function createUniverse(): void {
-    if (!$this->checkMethod($this->requestMethod, ['POST'])) {
-      return;
-    }
+    // Génération du nom de l'univers
+    $this->universeModel->setName($this->randomName(1)[0]);
 
     // Création de l'univers
-    $universeName = ["name" => $this->randomName(1)[0]];
-    $universeId = $this->universeModel->insertOne($universeName);
+    $this->universeModel->insertOne();
 
     // Création des galaxies
-    $galaxyController = new GalaxyController($this->requestMethod, [$universeId], $this->body);
+    $galaxyController = new GalaxyController($this->requestMethod, [$this->universeModel->getId()], $this->body);
     $galaxiesId = $galaxyController->createGalaxies();
 
     // Création des systèmes solaires
@@ -113,8 +106,10 @@ class UniverseController extends BaseController {
     $planetcontroller = new PlanetController($this->requestMethod, $solarSystemsId, $this->body);
     $planetcontroller->createPlanets();
 
-    if ($universeId != 0) {
-      $this->sendResponse("HTTP/1.1 201 Created", ["id" => $universeId]);
+    if ($this->universeModel->getId() != 0) {
+      $universe = ["id" => $this->universeModel->getId()];
+
+      $this->sendResponse("HTTP/1.1 201 Created", $universe);
     } else {
       $this->sendResponse("HTTP/1.1 500 Internal Server Error");
     }

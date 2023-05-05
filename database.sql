@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS planet_resource (
   planet_id INT,
   resource_id TINYINT,
   quantity INT NOT NULL,
-  last_time_calc TIMESTAMP NOT NULL,
+  last_time_calc TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (planet_id, resource_id),
   FOREIGN KEY (planet_id) REFERENCES planet(id) ON DELETE CASCADE,
   FOREIGN KEY (resource_id) REFERENCES resource(id) ON DELETE CASCADE
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS fight (
   id INT AUTO_INCREMENT PRIMARY KEY,
   attack_planet INT NOT NULL,
   defense_planet INT NOT NULL,
-  time_fight TIMESTAMP NOT NULL,
+  time_fight TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   victory BOOLEAN NOT NULL,
   FOREIGN KEY (attack_planet) REFERENCES planet(id),
   FOREIGN KEY (defense_planet) REFERENCES planet(id)
@@ -139,10 +139,39 @@ CREATE TABLE IF NOT EXISTS fight_item (
 );
 
 DELIMITER $$
-CREATE TRIGGER `after_planet_update` AFTER UPDATE ON `planet`
-  FOR EACH ROW BEGIN
-  DELETE FROM planet_resource WHERE planet_id = NEW.id;
-  DELETE FROM planet_item WHERE planet_id = NEW.id;
+CREATE TRIGGER `after_planet_update` 
+AFTER UPDATE ON `planet` 
+FOR EACH ROW 
+BEGIN
+  UPDATE planet_resource 
+    SET quantity = 500,
+        last_time_calc = CURRENT_TIMESTAMP
+    WHERE planet_id = NEW.id;
+END $$
+
+CREATE TRIGGER `after_planet_create` 
+AFTER INSERT ON `planet`
+FOR EACH ROW 
+BEGIN
+  DECLARE done INT DEFAULT FALSE;
+  DECLARE resource_id INT;
+  DECLARE cursor_resource CURSOR FOR SELECT id FROM resource;
+  DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+  OPEN cursor_resource;
+
+  read_loop: LOOP
+    FETCH cursor_resource INTO resource_id;
+
+    IF done THEN 
+      LEAVE read_loop;
+    END IF;
+
+    INSERT INTO planet_resource (planet_id, resource_id, quantity)
+      VALUES (NEW.id, resource_id, 500);
+  END LOOP;
+
+  CLOSE cursor_resource;
 END $$
 DELIMITER ;
 
@@ -162,49 +191,49 @@ INSERT INTO position_bonus(position, resource_id, bonus) VALUES
   (6, 3, 0), (7, 3, -10), (8, 3, -20), (9, 3, -30), (10, 3, -40);
 
 INSERT INTO item(id, name, type, build_time, attack_point, defense_point, freight_capacity, img_filename) VALUES
-  ('LABO', 'Laboratoire de recherche', 'STRUCTURE', '(50*2^L)(1-TECH_IA/100)^USINE_NANI', '0', '0', '0', 'none.jpg'),
-  ('CHANTIER', 'Chantier spatial', 'STRUCTURE', '(50*2^L)(1-TECH_IA/100)^USINE_NANI', '0', '0', '0', 'none.jpg'),
-  ('USINE_NANI', 'Usine de nanites', 'STRUCTURE', '(600*2^L)(1-TECH_IA/100)^USINE_NANI', '0', '0', '0', 'none.jpg'),
-  ('MINE', 'Mine de métal', 'STRUCTURE', '(10*2^L)(1-TECH_IA/100)^USINE_NANI', '0', '0', '0', 'none.jpg'),
-  ('DEUTERIUM', 'Synthétiseur de deutérium', 'STRUCTURE', '(25*2^L)(1-TECH_IA/100)^USINE_NANI', '0', '0', '0', 'none.jpg'),
-  ('CENTR_SOL', 'Centrale solaire', 'STRUCTURE', '(10*2^L)(1-TECH_IA/100)^USINE_NANI', '0', '0', '0', 'none.jpg'),
-  ('CENTR_FUS', 'Centrale à fusion', 'STRUCTURE', '(120*2^L)(1-TECH_IA/100)^USINE_NANI', '0', '0', '0', 'none.jpg'),
-  ('LASER', 'Artillerie laser', 'STRUCTURE', '10', '(100*1.05^L)*1.03^TECH_ARME', '25*1.05^TECH_BOUC', '0', 'none.jpg'),
-  ('CANON_IONS', 'Canon à ions', 'STRUCTURE', '40', '(250*1.05^L)*1.03^TECH_ARME', '200*1.05^TECH_BOUC', '0', 'none.jpg'),
-  ('BOUCLIER', 'Bouclier', 'STRUCTURE', '60*2^L', '0', '(2000*1.3^BOUCLIER)*1.05^TECH_BOUC', '0', 'none.jpg'),
-  ('TECH_NRJ', 'Technologie Energie', 'RECHERCHE', '4*2^L*0.95^LABO', '0', '0', '0', 'none.jpg'),
-  ('TECH_LASER', 'Technologie Laser', 'RECHERCHE', '2*2^L*0.95^LABO', '0', '0', '0', 'none.jpg'),
-  ('TECH_IONS', 'Technologie Ions', 'RECHERCHE', '8*2^L*0.95^LABO', '0', '0', '0', 'none.jpg'),
-  ('TECH_BOUC', 'Technologie Bouclier', 'RECHERCHE', '5*2^L*0.95^LABO', '0', '0', '0', 'none.jpg'),
-  ('TECH_ARME', 'Technologie Armement', 'RECHERCHE', '6*2^L*0.95^LABO', '0', '0', '0', 'none.jpg'),
-  ('TECH_IA', 'Technologie Intelligence Artificielle', 'RECHERCHE', '10*2^L*0.95^LABO', '0', '0', '0', 'none.jpg'),
-  ('CHASSEUR', 'Chasseur', 'UNITE', '20*0.95^CHANTIER', '75*1.03^TECH_ARME', '50*1.05^TECH_BOUC', '0', 'none.jpg'),
-  ('CROISEUR', 'Croiseur', 'UNITE', '120*0.95^CHANTIER', '400*1.03^TECH_ARME', '150*1.05^TECH_BOUC', '0', 'none.jpg'),
-  ('TRANSP', 'Transporteur', 'UNITE', '55*0.95^CHANTIER', '0', '50*1.05^TECH_BOUC', '100000', 'none.jpg'),
-  ('COLONIE', 'Vaisseau de colonisation', 'UNITE', '120*0.95^CHANTIER', '0', '50*1.05^TECH_BOUC', '0', 'none.jpg');
+  ('LABO', 'Laboratoire de recherche', 'STRUCTURE', '(50*2**$level)(1-$techIa/100)**$usineNanite', '0', '0', '0', 'none.jpg'),
+  ('CHANTIER', 'Chantier spatial', 'STRUCTURE', '(50*2**$level)(1-$techIa/100)**$usineNanite', '0', '0', '0', 'none.jpg'),
+  ('USINE_NANI', 'Usine de nanites', 'STRUCTURE', '(600*2**$level)(1-$techIa/100)**$usineNanite', '0', '0', '0', 'none.jpg'),
+  ('MINE', 'Mine de métal', 'STRUCTURE', '(10*2**$level)(1-$techIa/100)**$usineNanite', '0', '0', '0', 'none.jpg'),
+  ('DEUTERIUM', 'Synthétiseur de deutérium', 'STRUCTURE', '(25*2**$level)(1-$techIa/100)**$usineNanite', '0', '0', '0', 'none.jpg'),
+  ('CENTR_SOL', 'Centrale solaire', 'STRUCTURE', '(10*2**$level)(1-$techIa/100)**$usineNanite', '0', '0', '0', 'none.jpg'),
+  ('CENTR_FUS', 'Centrale à fusion', 'STRUCTURE', '(120*2**$level)(1-$techIa/100)**$usineNanite', '0', '0', '0', 'none.jpg'),
+  ('LASER', 'Artillerie laser', 'STRUCTURE', '10', '(100*1.05**$level)*1.03**$techArme', '25*1.05**$techBouclier', '0', 'none.jpg'),
+  ('CANON_IONS', 'Canon à ions', 'STRUCTURE', '40', '(250*1.05**$level)*1.03**$techArme', '200*1.05**$techBouclier', '0', 'none.jpg'),
+  ('BOUCLIER', 'Bouclier', 'STRUCTURE', '60*2**$level', '0', '(2000*1.3**$bouclier)*1.05**$techBouclier', '0', 'none.jpg'),
+  ('TECH_NRJ', 'Technologie Energie', 'RECHERCHE', '4*2**$level*0.95**$labo', '0', '0', '0', 'none.jpg'),
+  ('TECH_LASER', 'Technologie Laser', 'RECHERCHE', '2*2**$level*0.95**$labo', '0', '0', '0', 'none.jpg'),
+  ('TECH_IONS', 'Technologie Ions', 'RECHERCHE', '8*2**$level*0.95**$labo', '0', '0', '0', 'none.jpg'),
+  ('TECH_BOUC', 'Technologie Bouclier', 'RECHERCHE', '5*2**$level*0.95**$labo', '0', '0', '0', 'none.jpg'),
+  ('TECH_ARME', 'Technologie Armement', 'RECHERCHE', '6*2**$level*0.95**$labo', '0', '0', '0', 'none.jpg'),
+  ('TECH_IA', 'Technologie Intelligence Artificielle', 'RECHERCHE', '10*2**$level*0.95**$labo', '0', '0', '0', 'none.jpg'),
+  ('CHASSEUR', 'Chasseur', 'UNITE', '20*0.95**CHANTIER', '75*1.03**$techArme', '50*1.05**$techBouclier', '0', 'none.jpg'),
+  ('CROISEUR', 'Croiseur', 'UNITE', '120*0.95**CHANTIER', '400*1.03**$techArme', '150*1.05**$techBouclier', '0', 'none.jpg'),
+  ('TRANSP', 'Transporteur', 'UNITE', '55*0.95**CHANTIER', '0', '50*1.05**$techBouclier', '100000', 'none.jpg'),
+  ('COLONIE', 'Vaisseau de colonisation', 'UNITE', '120*0.95**CHANTIER', '0', '50*1.05**$techBouclier', '0', 'none.jpg');
 
 INSERT INTO item_cost(item_id, resource_id, quantity) VALUES
-  ('LABO', 1, '1000*1.6^L'),
-  ('LABO', 3, '500*1.6^L'),
-  ('CHANTIER', 1, '500*1.6^L'),
-  ('CHANTIER', 3, '500*1.6^L'),
-  ('USINE_NANI', 1, '10000*1.6^L'),
-  ('USINE_NANI', 3, '5000*1.6^L'),
-  ('MINE', 1, '100*1.6^L'),
-  ('MINE', 3, '10*1.6^L'),
-  ('DEUTERIUM', 1, '200*1.6^L'),
-  ('DEUTERIUM', 3, '50*1.6^L'),
-  ('CENTR_SOL', 1, '150*1.6^L'),
-  ('CENTR_SOL', 2, '20*1.6^L'),
-  ('CENTR_FUS', 1, '5000*1.6^L'),
-  ('CENTR_FUS', 2, '2000*1.6^L'),
+  ('LABO', 1, '1000*1.6**$level'),
+  ('LABO', 3, '500*1.6**$level'),
+  ('CHANTIER', 1, '500*1.6**$level'),
+  ('CHANTIER', 3, '500*1.6**$level'),
+  ('USINE_NANI', 1, '10000*1.6**$level'),
+  ('USINE_NANI', 3, '5000*1.6**$level'),
+  ('MINE', 1, '100*1.6**$level'),
+  ('MINE', 3, '10*1.6**$level'),
+  ('DEUTERIUM', 1, '200*1.6**$level'),
+  ('DEUTERIUM', 3, '50*1.6**$level'),
+  ('CENTR_SOL', 1, '150*1.6**$level'),
+  ('CENTR_SOL', 2, '20*1.6**$level'),
+  ('CENTR_FUS', 1, '5000*1.6**$level'),
+  ('CENTR_FUS', 2, '2000*1.6**$level'),
   ('LASER', 1, '1500'),
   ('LASER', 2, '300'),
   ('CANON_IONS', 1, '5000'),
   ('CANON_IONS', 2, '1000'),
-  ('BOUCLIER', 1, '10000*1.5^L'),
-  ('BOUCLIER', 2, '5000*1.5^L'),
-  ('BOUCLIER', 3, '1000*1.5^L'),
+  ('BOUCLIER', 1, '10000*1.5**$level'),
+  ('BOUCLIER', 2, '5000*1.5**$level'),
+  ('BOUCLIER', 3, '1000*1.5**$level'),
   ('TECH_NRJ', 2, '100'),
   ('TECH_LASER', 2, '300'),
   ('TECH_IONS', 2, '500'),
@@ -243,7 +272,7 @@ INSERT INTO item_prerequisite(item_id, required_item_id, level) VALUES
   ('COLONIE', 'CHANTIER', 1);
 
 INSERT INTO item_production(item_id, resource_id, production) VALUES
-  ('MINE', 1, '(3*1.5^(L-1))*(1+BONUS/100)'),
-  ('DEUTERIUM', 2, '(1*1.5^(L-1))*(1+BONUS/100)'),
-  ('CENTR_SOL', 3, '20*(1+BONUS/100)'),
-  ('CENTR_FUS', 3, '50*(1+BONUS/100)');
+  ('MINE', 1, '(3*1.5**($level-1))*(1+$bonus/100)'),
+  ('DEUTERIUM', 2, '(1*1.5**($level-1))*(1+$bonus/100)'),
+  ('CENTR_SOL', 3, '20*(1+$bonus/100)'),
+  ('CENTR_FUS', 3, '50*(1+$bonus/100)');
