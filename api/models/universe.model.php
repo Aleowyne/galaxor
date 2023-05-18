@@ -1,64 +1,34 @@
 <?php
 
-class UniverseModel extends Database {
-  private $id = 0;
-  private $name = "";
-
-  public function setId(string $id): void {
-    $this->id = (int) $id;
-  }
-
-  public function setName(string $name): void {
-    $this->name = $name;
-  }
-
-  public function getId(): int {
-    return $this->id;
-  }
-
-  public function getName(): string {
-    return $this->name;
-  }
-
+class UniverseModel {
+  public int $id;
+  public string $name;
+  /** @var GalaxyModel[] $galaxies **/
+  public array $galaxies;
 
   /**
-   * Sélection de tous les univers en base
+   * Constructeur
    *
-   * @return array Liste de tous les univers
+   * @param mixed[] $universe Données de l'univers
    */
-  public function findAll(): array {
-    return $this->select(
-      "SELECT id, name FROM universe ORDER BY id ASC"
-    );
+  public function __construct(array $universe = []) {
+    $this->id = $universe["id"] ?? 0;
+    $this->name = $universe["name"] ?? "";
+    $this->galaxies = [];
   }
 
-
   /**
-   * Sélection d'un univers en base
+   * Transformation des données de l'univers sous forme de tableau
    *
-   * @return array Données d'un univers
+   * @return mixed[] Données de l'univers
    */
-  public function findOne(): array {
-    $params = [["id" => $this->id]];
-
-    return $this->select(
-      "SELECT id, name FROM universe WHERE id = :id",
-      $params
-    );
-  }
-
-
-  /**
-   * Ajout d'un univers dans la base
-   */
-  public function insertOne(): void {
-    $params = [["name" => $this->name]];
-
-    $ids = $this->insert(
-      "INSERT INTO universe (name) VALUES (:name)",
-      $params
-    );
-
-    $this->setId($ids[0] ?? 0);
+  public function toArray(): array {
+    return [
+      "id" => $this->id,
+      "name" => $this->name,
+      "galaxies" => array_map(function (GalaxyModel $galaxy) {
+        return $galaxy->toArray();
+      }, $this->galaxies)
+    ];
   }
 }

@@ -1,79 +1,34 @@
 <?php
 
-class GalaxyModel extends Database {
-  private $id = 0;
-  private $universeId = 0;
-  private $listNames = [];
+class GalaxyModel {
+  public int $id;
+  public string $name;
+  /** @var SolarSystemModel[] $solarSystems **/
+  public array $solarSystems;
 
-  public function setId(string $id): void {
-    $this->id = (int) $id;
+  /**
+   * Constructeur
+   *
+   * @param mixed[] $galaxy Données de la galaxie
+   */
+  public function __construct(array $galaxy = []) {
+    $this->id = $galaxy["id"] ?? 0;
+    $this->name = $galaxy["name"] ?? "";
+    $this->solarSystems = [];
   }
 
-  public function setUniverseId(string $id): void {
-    $this->universeId = (int) $id;
-  }
-
-  public function addName(string $name): void {
-    $galaxy = [
-      "name" => $name,
-      "universe_id" => $this->universeId
+  /**
+   * Transformation des données de la galaxie sous forme de tableau
+   *
+   * @return mixed[] Données de la galaxie
+   */
+  public function toArray(): array {
+    return [
+      "id" => $this->id,
+      "name" => $this->name,
+      "solar_systems" => array_map(function (SolarSystemModel $solarSystem) {
+        return $solarSystem->toArray();
+      }, $this->solarSystems)
     ];
-
-    array_push($this->listNames, $galaxy);
-  }
-
-  public function getId(): int {
-    return $this->id;
-  }
-
-  public function getUniverseId(): int {
-    return $this->universeId;
-  }
-
-  public function getNames(): array {
-    return $this->listNames;
-  }
-
-
-  /**
-   * Sélection de toutes les galaxies d'un univers en base
-   *
-   * @return array Liste des galaxies
-   */
-  public function findAllByUniverse(): array {
-    $params = [["universe_id" => $this->universeId]];
-
-    return $this->select(
-      "SELECT id, name FROM galaxy WHERE universe_id = :universe_id",
-      $params
-    );
-  }
-
-
-  /**
-   * Sélection d'une galaxie en base
-   *
-   * @return array Données de la galaxie
-   */
-  public function findOne(): array {
-    $params = [["id" => $this->id]];
-
-    return $this->select(
-      "SELECT id, name FROM galaxy WHERE id = :id",
-      $params
-    );
-  }
-
-
-  /**
-   * Ajout de galaxies dans la base
-   *
-   * @return array Liste des ID des galaxies
-   */
-  public function insertMultiples(): array {
-    return $this->insert(
-      "INSERT INTO galaxy (universe_id, name) VALUES (:universe_id, :name)",
-      $this->listNames
-    );
   }
 }

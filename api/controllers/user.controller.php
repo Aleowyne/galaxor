@@ -1,7 +1,7 @@
 <?php
 
 class UserController extends BaseController {
-  private $userModel = null;
+  private $userDao = null;
   private string $requestMethod = "";
   private array $params = [];
   private array $body = [];
@@ -10,11 +10,11 @@ class UserController extends BaseController {
    * Constructeur
    *
    * @param string $requestMethod Méthode de la requête
-   * @param array $params Paramètres de la requête
-   * @param array $body Contenu de la requête
+   * @param mixed[] $params Paramètres de la requête
+   * @param mixed[] $body Contenu de la requête
    */
   public function __construct(string $requestMethod, array $params, array $body) {
-    $this->userModel = new UserModel();
+    $this->userDao = new UserDao();
     $this->requestMethod = $requestMethod;
     $this->params = $params;
     $this->body = $body;
@@ -34,7 +34,7 @@ class UserController extends BaseController {
           $this->getUser();
           break;
         default:
-          $this->methodNotSupported();
+          $this->sendMethodNotSupported();
       }
       return;
     }
@@ -46,7 +46,7 @@ class UserController extends BaseController {
           $this->getUsers();
           break;
         default:
-          $this->methodNotSupported();
+          $this->sendMethodNotSupported();
       }
       return;
     }
@@ -58,7 +58,7 @@ class UserController extends BaseController {
           $this->register();
           break;
         default:
-          $this->methodNotSupported();
+          $this->sendMethodNotSupported();
       }
       return;
     }
@@ -70,7 +70,7 @@ class UserController extends BaseController {
           $this->login();
           break;
         default:
-          $this->methodNotSupported();
+          $this->sendMethodNotSupported();
       }
       return;
     }
@@ -82,12 +82,12 @@ class UserController extends BaseController {
           $this->logout();
           break;
         default:
-          $this->methodNotSupported();
+          $this->sendMethodNotSupported();
       }
       return;
     }
 
-    $this->sendResponse("HTTP/1.1 404 Not Found");
+    $this->sendErrorResponse("URL non valide");
   }
 
 
@@ -95,14 +95,14 @@ class UserController extends BaseController {
    * Récupération d'un utilisateur
    */
   private function getUser(): void {
-    $this->userModel->setId($this->params[0] ?? 0);
+    $userId = (int) ($this->params[0] ?? 0);
 
-    $result = $this->userModel->findOneById();
+    $user = $this->userDao->findOneById($userId);
 
-    if ($result) {
-      $this->sendResponse("HTTP/1.1 200 OK", $result);
+    if ($user->id) {
+      $this->sendSuccessResponse($user->toArray());
     } else {
-      $this->sendResponse("HTTP/1.1 404 Not Found");
+      $this->sendErrorResponse("Utilisateur non trouvé");
     }
   }
 
@@ -111,9 +111,15 @@ class UserController extends BaseController {
    * Récupération de plusieurs utilisateurs
    */
   private function getUsers(): void {
-    $result = $this->userModel->findAll();
+    $users = $this->userDao->findAll();
 
-    $this->sendResponse("HTTP/1.1 200 OK", $result);
+    $arrayUsers = [
+      "users" => array_map(function (UserModel $user) {
+        return $user->toArray();
+      }, $users)
+    ];
+
+    $this->sendSuccessResponse($arrayUsers);
   }
 
 
@@ -121,30 +127,31 @@ class UserController extends BaseController {
    * Enregistrer un utilisateur
    */
   private function register(): void {
-    $this->userModel->setMailAddress($this->body["mail_address"] ?? "");
-    $this->userModel->setName($this->body["name"] ?? "");
-    $this->userModel->setPassword($this->body["password"] ?? "");
-
     // Données de l'utilisateur non valides
     if (!$this->checkUserRegister()) {
-      $this->invalidBody();
+      $this->sendInvalidBody();
       return;
     }
+
+    $name = $this->body["name"];
+    $password = $this->body["password"];
+    $mailAddress = $this->body["mail_address"];
 
     // Utilisateur déjà enregistré
-    if ($this->userModel->findOneByAddress() || $this->userModel->findOneByName()) {
-      $this->invalidBody();
+    if (
+      $this->userDao->findOneByAddress($mailAddress)->id
+      || $this->userDao->findOneByName($password)->id
+    ) {
+      $this->sendInvalidBody();
       return;
     }
 
-    $this->userModel->insertOne();
+    $user = $this->userDao->insertOne($name, $password, $mailAddress);
 
-    if ($this->userModel->getId() != 0) {
-      $user = ["id" => $this->userModel->getId()];
-
-      $this->sendResponse("HTTP/1.1 201 Created", $user);
+    if ($user->id) {
+      $this->sendCreatedResponse($user->toArray());
     } else {
-      $this->sendResponse("HTTP/1.1 500 Internal Server Error");
+      $this->sendInternalServerError("Erreur à l'inscription");
     }
   }
 
@@ -154,41 +161,28 @@ class UserController extends BaseController {
    */
   private function login(): void {
     // Utilisateur déjà connecté
-    if (isset($_SESSION["id"]) && isset($_SESSION["name"])) {
-      $user = [
-        "id" => $_SESSION["id"],
-        "name" => $_SESSION["name"]
-      ];
-
-      $this->sendResponse("HTTP/1.1 200 OK", $user);
+    if (isset($_SESSION["id"]) && $_SESSION["id"]) {
+      $userSession = new UserModel($_SESSION);
+      $this->sendSuccessResponse($userSession->toArray());
       return;
     }
-
-    $this->userModel->setMailAddress($this->body["mail_address"] ?? "");
-    $this->userModel->setPassword($this->body["password"] ?? "");
 
     // Données de l'utilisateur non valide
     if (!$this->checkUserLogin()) {
-      $this->invalidBody();
+      $this->sendInvalidBody();
       return;
     }
 
-    $result = $this->userModel->login();
+    $mailAddress = $this->body["mail_address"];
+    $password = $this->body["password"];
 
-    if ($result) {
-      $user = [
-        "id" => $this->userModel->getId(),
-        "name" => $this->userModel->getName()
-      ];
+    $user = $this->userDao->login($mailAddress, $password);
 
-      $_SESSION = [
-        "id" => $this->userModel->getId(),
-        "name" => $this->userModel->getName()
-      ];
-
-      $this->sendResponse("HTTP/1.1 200 OK", $user);
+    if ($user->id) {
+      $_SESSION = $user;
+      $this->sendSuccessResponse($user->toArray());
     } else {
-      $this->sendResponse("HTTP/1.1 404 Not Found");
+      $this->sendErrorResponse("Connexion échouée");
     }
   }
 
@@ -200,9 +194,8 @@ class UserController extends BaseController {
     $_SESSION = array();
     session_destroy();
 
-    $this->sendResponse("HTTP/1.1 200 OK");
+    $this->sendSuccessResponse();
   }
-
 
   /**
    * Contrôle des données de l'utilisateur à l'enregistrement
@@ -210,9 +203,11 @@ class UserController extends BaseController {
    * @return boolean Flag indiquant si les données sont valides
    */
   private function checkUserRegister(): bool {
-    return $this->userModel->getName()
-      && $this->userModel->getPassword()
-      && $this->userModel->getMailAddress();
+    $mailAddress = $this->body["mail_address"] ?? "";
+    $name = $this->body["name"] ?? "";
+    $password = $this->body["password"] ?? "";
+
+    return $mailAddress && $name && $password;
   }
 
 
@@ -222,6 +217,9 @@ class UserController extends BaseController {
    * @return boolean Flag indiquant si les données sont valides
    */
   private function checkUserLogin(): bool {
-    return $this->userModel->getPassword() && $this->userModel->getMailAddress();
+    $mailAddress = $this->body["mail_address"] ?? "";
+    $password = $this->body["password"] ?? "";
+
+    return $mailAddress && $password;
   }
 }

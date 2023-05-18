@@ -1,7 +1,7 @@
 <?php
 
 class UniverseController extends BaseController {
-  private $universeModel = null;
+  private $universeDao = null;
   private $requestMethod = "";
   private $params = [];
   private $body = [];
@@ -10,11 +10,11 @@ class UniverseController extends BaseController {
    * Constructeur
    *
    * @param string $requestMethod Méthode de la requête
-   * @param array $params Paramètres de la requête
-   * @param array $body Contenu de la requête
+   * @param mixed[] $params Paramètres de la requête
+   * @param mixed[] $body Contenu de la requête
    */
   public function __construct(string $requestMethod, array $params, array $body) {
-    $this->universeModel = new UniverseModel();
+    $this->universeDao = new UniverseDao();
     $this->requestMethod = $requestMethod;
     $this->params = $params;
     $this->body = $body;
@@ -34,7 +34,7 @@ class UniverseController extends BaseController {
           $this->getUniverse();
           break;
         default:
-          $this->methodNotSupported();
+          $this->sendMethodNotSupported();
       }
       return;
     }
@@ -49,12 +49,12 @@ class UniverseController extends BaseController {
           $this->createUniverse();
           break;
         default:
-          $this->methodNotSupported();
+          $this->sendMethodNotSupported();
       }
       return;
     }
 
-    $this->sendResponse("HTTP/1.1 404 Not Found");
+    $this->sendErrorResponse("URL non valide");
   }
 
 
@@ -62,14 +62,14 @@ class UniverseController extends BaseController {
    * Récupération d'un univers
    */
   private function getUniverse(): void {
-    $this->universeModel->setId($this->params[0] ?? 0);
+    $universeId = (int) ($this->params[0] ?? 0);
 
-    $result = $this->universeModel->findOne();
+    $universe = $this->universeDao->findOne($universeId);
 
-    if ($result) {
-      $this->sendResponse("HTTP/1.1 200 OK", $result);
+    if ($universe->id) {
+      $this->sendSuccessResponse($universe->toArray());
     } else {
-      $this->sendResponse("HTTP/1.1 404 Not Found");
+      $this->sendErrorResponse("Univers non trouvé");
     }
   }
 
@@ -78,9 +78,15 @@ class UniverseController extends BaseController {
    * Récupération de plusieurs univers
    */
   private function getUniverses(): void {
-    $result = $this->universeModel->findAll();
+    $universes = $this->universeDao->findAll();
 
-    $this->sendResponse("HTTP/1.1 200 OK", $result);
+    $arrayUniverses = [
+      "universes" => array_map(function (UniverseModel $universe) {
+        return $universe->toArray();
+      }, $universes)
+    ];
+
+    $this->sendSuccessResponse($arrayUniverses);
   }
 
 
@@ -88,30 +94,22 @@ class UniverseController extends BaseController {
    * Création d'un univers
    */
   private function createUniverse(): void {
+    $universe = new UniverseModel();
+
     // Génération du nom de l'univers
-    $this->universeModel->setName($this->randomName(1)[0]);
+    $universe->name = $this->randomName(1)[0];
 
     // Création de l'univers
-    $this->universeModel->insertOne();
+    $universe = $this->universeDao->insertOne($universe);
 
     // Création des galaxies
-    $galaxyController = new GalaxyController($this->requestMethod, [$this->universeModel->getId()], $this->body);
-    $galaxiesId = $galaxyController->createGalaxies();
+    $galaxyController = new GalaxyController($this->requestMethod, [$universe->id], $this->body);
+    $universe->galaxies = $galaxyController->createGalaxies();
 
-    // Création des systèmes solaires
-    $solarSystemController = new SolarSystemController($this->requestMethod, $galaxiesId, $this->body);
-    $solarSystemsId = $solarSystemController->createSolarSystems();
-
-    // Création des planètes
-    $planetcontroller = new PlanetController($this->requestMethod, $solarSystemsId, $this->body);
-    $planetcontroller->createPlanets();
-
-    if ($this->universeModel->getId() != 0) {
-      $universe = ["id" => $this->universeModel->getId()];
-
-      $this->sendResponse("HTTP/1.1 201 Created", $universe);
+    if ($universe->id) {
+      $this->sendCreatedResponse($universe->toArray());
     } else {
-      $this->sendResponse("HTTP/1.1 500 Internal Server Error");
+      $this->sendInternalServerError("Erreur à la création de l'univers");
     }
   }
 }

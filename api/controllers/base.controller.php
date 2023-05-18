@@ -5,19 +5,51 @@ class BaseController {
    * Affichage de la réponse de l'API
    *
    * @param string $header Entête de la réponse
-   * @param array $body Contenu de la réponse
+   * @param mixed[] $body Contenu de la réponse
    */
-  protected function sendResponse(string $header, mixed $body = []): void {
+  protected function sendResponse(string $header, array $body = []): void {
     header($header);
     echo json_encode($body);
   }
 
+  /**
+   * Réponse de l'API : Succès
+   * @param mixed[] $body Contenu de la reponse
+   */
+  protected function sendSuccessResponse(array $body = []): void {
+    $this->sendResponse("HTTP/1.1 200 OK", $body);
+  }
+
+  /**
+   * Réponse de l'API : Créé
+   * @param mixed[] $body Contenu de la reponse
+   */
+  protected function sendCreatedResponse(array $body = []): void {
+    $this->sendResponse("HTTP/1.1 201 Created", $body);
+  }
+
+  /**
+   * Réponse de l'API : Pas de contenu
+   * @param mixed[] $body Contenu de la reponse
+   */
+  protected function sendNoContentResponse(): void {
+    $this->sendResponse("HTTP/1.1 204 No Content");
+  }
+
+  /**
+   * Réponse de l'API : Non trouvé
+   * @param string $message Message d'erreur
+   */
+  protected function sendErrorResponse(string $message = ""): void {
+    $error = ["error" => $message];
+    $this->sendResponse("HTTP/1.1 404 Not Found", $error);
+  }
 
   /**
    * Réponse de l'API : Méthode non supportée
    */
-  protected function methodNotSupported(): void {
-    $error = array("error" => "Method not supported");
+  protected function sendMethodNotSupported(): void {
+    $error = ["error" => "Méthode non supportée"];
     $this->sendResponse("HTTP/1.1 405 Method Not Allowed", $error);
   }
 
@@ -25,17 +57,26 @@ class BaseController {
   /**
    * Réponse de l'API : Contenu de la requête non valide
    */
-  protected function invalidBody(): void {
-    $error = array("error" => "Invalid body");
+  protected function sendInvalidBody(): void {
+    $error = ["error" => "Contenu de la requête non valide"];
     $this->sendResponse("HTTP/1.1 422 Unprocessable Entity", $error);
   }
 
 
   /**
+   * Réponse de l'API : Erreur interne du serveur
+   * @param string $message Message d'erreur
+   */
+  protected function sendInternalServerError(string $message = ""): void {
+    $error = ["error" => $message];
+    $this->sendResponse("HTTP/1.1 500 Internal Server Error", $error);
+  }
+
+  /**
    * Génération de noms aléatoires
    *
    * @param integer $number Nombre de noms à générer
-   * @return array Tableau des noms générés
+   * @return string[] Tableau des noms générés
    */
   protected function randomName(int $number): array {
     $consonants = ["b", "c", "d", "f", "g", "h", "j", "k", "l", "l", "m", "m", "n", "n", "p", "r", "r", "s", "s", "t", "t", "v", "w", "x", "y", "z"];

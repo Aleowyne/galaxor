@@ -27,21 +27,21 @@ try {
   }
 
   // Gestion des planètes
-  if (preg_match("/\/api\/.*planets.*$/", $uri)) {
+  if (preg_match("/\/api\/planets.*$/", $uri)) {
     $controller = new PlanetController($requestMethod, $params, $body);
     $controller->processRequest($uri);
     return;
   }
 
   // Gestion des systèmes solaires
-  if (preg_match("/\/api\/.*solarsystems.*$/", $uri)) {
+  if (preg_match("/\/api\/solarsystems.*$/", $uri)) {
     $controller = new SolarSystemController($requestMethod, $params, $body);
     $controller->processRequest($uri);
     return;
   }
 
   // Gestion des galaxies
-  if (preg_match("/\/api\/.*galaxies.*$/", $uri)) {
+  if (preg_match("/\/api\/galaxies.*$/", $uri)) {
     $controller = new GalaxyController($requestMethod, $params, $body);
     $controller->processRequest($uri);
     return;
