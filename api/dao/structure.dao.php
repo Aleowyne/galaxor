@@ -11,7 +11,7 @@ class StructureDao extends Database {
     $params = [["planet_id" => $planetId]];
 
     $result = $this->select(
-      "SELECT i.id AS item_id, i.name AS item_name, pi.level, 
+      "SELECT pi.item_id, i.name AS item_name, pi.level, 
               pi.upgrade_in_progress, pi.time_end_upgrade, i.build_time,
               ip.resource_id, ip.production
         FROM planet_item AS pi
@@ -21,7 +21,7 @@ class StructureDao extends Database {
           ON pi.item_id = ip.item_id
         WHERE pi.planet_id = :planet_id
           AND i.type = 'STRUCTURE'
-        ORDER BY i.id, ip.resource_id",
+        ORDER BY pi.item_id, ip.resource_id",
       $params
     );
 
@@ -32,49 +32,24 @@ class StructureDao extends Database {
     foreach ($result as $res) {
       if ($currentId !== $res["item_id"]) {
         if ($currentId) {
-          array_push($structures, $structure);
+          $structures[] = $structure;
         }
 
         $structure = new StructureModel($res);
       }
 
       $production = new ProductionModel($res);
-      array_push($structure->formulasProd, $production);
+
+      if ($production->resourceId) {
+        $structure->formulasProd[] = $production;
+      }
       $currentId = $res["item_id"];
     }
 
     if ($currentId) {
-      array_push($structures, $structure);
+      $structures[] = $structure;
     }
 
     return $structures;
-  }
-
-
-  /**
-   * Mise à jour d'une structure d'une planète dans la base
-   *
-   * @param integer $planetId Identifiant de la planète
-   * @param StructureModel $structure Données de la structure
-   * @return boolean Flag indiquant si la mise à jour a réussi
-   */
-  public function updateOne(int $planetId, StructureModel $structure): bool {
-    $params = [[
-      "planet_id" => $planetId,
-      "item_id" => $structure->id,
-      "level" => $structure->level,
-      "upgrade_in_progress" => $structure->upgradeInProgress,
-      "time_end_upgrade" => $structure->timeEndUpgrade
-    ]];
-
-    return $this->update(
-      "UPDATE planet_item
-        SET level = :level,
-            upgrade_in_progress = :upgrade_in_progress,
-            time_end_upgrade = :time_end_upgrade
-        WHERE planet_id = :planet_id
-          AND item_id = :item_id",
-      $params
-    );
   }
 }

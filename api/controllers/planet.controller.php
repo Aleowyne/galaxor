@@ -2,8 +2,6 @@
 
 class PlanetController extends BaseController {
   private $planetDao = null;
-  private $structureDao = null;
-  private $resourceDao = null;
   private $planet = null;
   private $requestMethod = "";
   private $params = [];
@@ -18,8 +16,6 @@ class PlanetController extends BaseController {
    */
   public function __construct(string $requestMethod, array $params, array $body) {
     $this->planetDao = new PlanetDao();
-    $this->structureDao = new StructureDao();
-    $this->resourceDao = new ResourceDao();
     $this->requestMethod = $requestMethod;
     $this->params = $params;
     $this->body = $body;
@@ -71,11 +67,55 @@ class PlanetController extends BaseController {
       return;
     }
 
-    /* Endpoint /api/planets/:planet_id/structures/:structure_id */
-    if (preg_match("/\/api\/planets\/[0-9]*\/structures\/[A-Z_]*$/", $uri)) {
+    /* Endpoint /api/planets/:planet_id/structures/:structure_id/upgrade/start */
+    if (preg_match("/\/api\/planets\/[0-9]*\/structures\/[A-Z_]*\/upgrade\/start$/", $uri)) {
       switch ($this->requestMethod) {
         case "PUT":
-          $this->updateStructurePlanet();
+          $planetId = (int) ($this->params[0] ?? 0);
+          $structureController = new StructureController($planetId);
+          $this->startUpgradeItemPlanet($structureController, $planetId);
+          break;
+        default:
+          $this->sendMethodNotSupported();
+      }
+      return;
+    }
+
+    /* Endpoint /api/planets/:planet_id/structures/:structure_id/upgrade/finish */
+    if (preg_match("/\/api\/planets\/[0-9]*\/structures\/[A-Z_]*\/upgrade\/finish*$/", $uri)) {
+      switch ($this->requestMethod) {
+        case "PUT":
+          $planetId = (int) ($this->params[0] ?? 0);
+          $structureController = new StructureController($planetId);
+          $this->finishUpgradeItemPlanet($structureController, $planetId);
+          break;
+        default:
+          $this->sendMethodNotSupported();
+      }
+      return;
+    }
+
+    /* Endpoint /api/planets/:planet_id/researches/:research_id/upgrade/start */
+    if (preg_match("/\/api\/planets\/[0-9]*\/researches\/[A-Z_]*\/upgrade\/start*$/", $uri)) {
+      switch ($this->requestMethod) {
+        case "PUT":
+          $planetId = (int) ($this->params[0] ?? 0);
+          $researchController = new ResearchController($planetId);
+          $this->startUpgradeItemPlanet($researchController, $planetId);
+          break;
+        default:
+          $this->sendMethodNotSupported();
+      }
+      return;
+    }
+
+    /* Endpoint /api/planets/:planet_id/researches/:research_id/upgrade/finish */
+    if (preg_match("/\/api\/planets\/[0-9]*\/researches\/[A-Z_]*\/upgrade\/finish*$/", $uri)) {
+      switch ($this->requestMethod) {
+        case "PUT":
+          $planetId = (int) ($this->params[0] ?? 0);
+          $researchController = new ResearchController($planetId);
+          $this->finishUpgradeItemPlanet($researchController, $planetId);
           break;
         default:
           $this->sendMethodNotSupported();
@@ -93,13 +133,26 @@ class PlanetController extends BaseController {
   private function getPlanet(): void {
     $planetId = (int) ($this->params[0] ?? 0);
 
-    $isPlanetExist = $this->refreshPlanet($planetId);
+    $this->planet = $this->planetDao->findOne($planetId);
 
-    if ($isPlanetExist) {
-      $this->sendSuccessResponse($this->planet->toArray());
-    } else {
+    if (!$this->planet->id) {
       $this->sendErrorResponse("Planète non trouvée");
+      return;
     }
+
+    // Récupération des structures
+    $structureController = new StructureController($planetId);
+    $this->planet->structures = $structureController->getItems();
+
+    // Récupération des recherches
+    $researchController = new ResearchController($planetId);
+    $this->planet->researches = $researchController->getItems();
+
+    // Récupération des ressources
+    $resourceController = new ResourceController($planetId);
+    $this->planet->resources = $resourceController->getResources();
+
+    $this->sendSuccessResponse($this->planet->toArray());
   }
 
 
@@ -111,38 +164,11 @@ class PlanetController extends BaseController {
 
     $arrayPlanets = [
       "planets" => array_map(function (PlanetModel $planet) {
-        return $planet->toSimpleArray();
+        return $planet->toArray();
       }, $planets)
     ];
 
     $this->sendSuccessResponse($arrayPlanets);
-  }
-
-
-  /**
-   * Récupération des données d'une planète 
-   * 
-   * @param integer $planetId Identifiant de la planète
-   * @param string $upStructureId Identifiant de la structure upgradée
-   * @return boolean Flag indiquant si la planète existe
-   */
-  private function refreshPlanet(int $planetId, string $upStructureId = ""): bool {
-    $this->planet = $this->planetDao->findOne($planetId);
-
-    if (!$this->planet->id) {
-      return false;
-    }
-
-    // Récupération des structures de la planète
-    $this->planet->structures = $this->structureDao->findAllByPlanet($this->planet->id);
-
-    // Calcul de la production de ressources par les structures sur la planète
-    $this->calculateProduction($upStructureId);
-
-    // Evaluation des formules des structures d'une planète
-    $this->evaluateFormulas();
-
-    return true;
   }
 
 
@@ -174,9 +200,9 @@ class PlanetController extends BaseController {
     $planetId = (int) ($this->params[0] ?? 0);
     $userId = $this->body["user_id"];
 
-    $result = $this->planetDao->updateOne($planetId, $userId);
+    $isUpdatePlanet = $this->planetDao->updateOne($planetId, $userId);
 
-    if ($result) {
+    if ($isUpdatePlanet) {
       $this->sendSuccessResponse();
     } else {
       $this->sendErrorResponse();
@@ -190,96 +216,19 @@ class PlanetController extends BaseController {
   private function updateResourcesPlanet(): void {
     $planetId = (int) ($this->params[0] ?? 0);
 
-    // Récupération des données de la planète
-    $isPlanetExist = $this->refreshPlanet($planetId);
+    $this->planet = $this->planetDao->findOne($planetId);
 
-    if (!$isPlanetExist) {
+    if (!$this->planet->id) {
       $this->sendErrorResponse("Planète non trouvée");
       return;
     }
 
-    // Calcul de la nouvelle quantité des ressources sur la planète
-    $this->calculateNewQuantity();
+    // Mise à jour de la quantité des ressources
+    $resourceController = new ResourceController($planetId);
+    $this->planet->resources = $resourceController->getResources();
+    $isUpdateResource = $resourceController->updateResources();
 
-    // Mise à jour des ressources sur la planète
-    $result = $this->resourceDao->updateMultiples($planetId, $this->planet->resources);
-
-    if ($result) {
-      $this->sendSuccessResponse($this->planet->toResourcesArray());
-    } else {
-      $this->sendNoContentResponse();
-    }
-  }
-
-
-  /**
-   * Mise à jour d'une structure d'une planète (prise d'un niveau)
-   */
-  private function updateStructurePlanet(): void {
-    $planetId = (int) ($this->params[0] ?? 0);
-    $structureId = $this->params[1] ?? "";
-
-    // Récupération des données de la planète
-    $isPlanetExist = $this->refreshPlanet($planetId);
-
-    if (!$isPlanetExist) {
-      $this->sendErrorResponse("Planète non trouvée");
-      return;
-    }
-
-    // Calcul de la nouvelle quantité des ressources sur la planète
-    $this->calculateNewQuantity();
-
-    // Mise à jour des ressources sur la planète avant upgrade de la structure
-    $this->resourceDao->updateMultiples($planetId, $this->planet->resources);
-
-    // Récupération de la structure sur la planète
-    $structure = $this->planet->getStructure($structureId);
-
-    if (!$structure->id) {
-      $this->sendErrorResponse("Structure non trouvée");
-      return;
-    }
-
-    $currentDate = new DateTime();
-
-    if (!$structure->upgradeInProgress) {
-      // Contrôle de la disponibilité des ressources pour upgrade
-      if (!$this->checkAvailabilityResources($structure)) {
-        $this->sendErrorResponse("Ressources insuffisantes");
-        return;
-      }
-
-      // Détermination de la date de fin de l'upgrade
-      $buildTime = new DateInterval("PT" . $structure->buildTime . "S");
-      $structure->timeEndUpgrade = $currentDate->add($buildTime)->format("Y-m-d H:i:s");
-      $structure->upgradeInProgress = 1;
-
-      // Mise à jour de la structure
-      $result = $this->structureDao->updateOne($planetId, $structure);
-    } else {
-      $endBuildDate = new DateTime($structure->timeEndUpgrade);
-
-      // Upgrade terminé
-      if ($currentDate >= $endBuildDate) {
-        $structure->level++;
-        $structure->upgradeInProgress = 0;
-      }
-
-      // Mise à jour de la structure
-      $result = $this->structureDao->updateOne($planetId, $structure);
-
-      // Récupération des données de la planète
-      $this->refreshPlanet($planetId, $structure->id);
-
-      // Calcul de la nouvelle quantité des ressources sur la planète
-      $this->calculateNewQuantity();
-    }
-
-    // Mise à jour des ressources sur la planète après upgrade de la structure
-    $this->resourceDao->updateMultiples($planetId, $this->planet->resources);
-
-    if ($result) {
+    if ($isUpdateResource) {
       $this->sendSuccessResponse($this->planet->toArray());
     } else {
       $this->sendNoContentResponse();
@@ -288,146 +237,122 @@ class PlanetController extends BaseController {
 
 
   /**
-   * Calcul de la production de ressources par les structures sur une planète
-   *
-   * @param string $upStructureId Identifiant de la structure upgradée
+   * Démarrage de l'upgrade d'un item d'une planète
+   * 
+   * @param StructureController|ResearchController $itemController Contrôleur des items
+   * @param integer $planetId Identifiant de la planète
    */
-  private function calculateProduction(string $upStructureId = ""): void {
-    foreach ($this->planet->structures as $structure) {
-      /** @var StructureModel $structure **/
-      foreach ($structure->formulasProd as $production) {
-        // Pas de mise à jour de la ressource "Energie"
-        if (($production->resourceId === 3 && $structure->id !== $upStructureId)
-          || $structure->level === 0
-        ) {
-          continue;
-        }
+  private function startUpgradeItemPlanet(StructureController|ResearchController $itemController, int $planetId): void {
+    $itemId = $this->params[1] ?? "";
 
-        $resource = $this->planet->getResource($production->resourceId);
+    $this->planet = $this->planetDao->findOne($planetId);
 
-        $formula = "return " . $production->formula . ";";
-        $level = $structure->level;
-        $bonus = $resource->bonus;
-
-        // Mise à jour du nombre de ressources produites à la minute sur la planète
-        $resource->production = (int) round(eval($formula));
-      }
+    if (!$this->planet->id) {
+      $this->sendErrorResponse("Planète non trouvée");
+      return;
     }
+
+    // Récupération de l'item
+    $item = $itemController->getItem($itemId);
+
+    if (!$item->id) {
+      return;
+    }
+
+    // Récupération des ressources
+    $resourceController = new ResourceController($planetId);
+    $this->planet->resources = $resourceController->getResources();
+
+    // Contrôle de la disponibilité des ressources pour upgrade
+    if (!$resourceController->checkAvailabilityResources($item)) {
+      $this->sendErrorResponse("Ressources insuffisantes");
+      return;
+    }
+
+    // Mise à jour des ressources sur la planète 
+    $resourceController->updateResources();
+
+    // Mise à jour de l'item
+    $isUpdateItem = $itemController->startUpgradeItem($item);
+
+    if (!$isUpdateItem) {
+      return;
+    }
+
+    $item = $itemController->getItem($itemId);
+
+    switch ($item->type) {
+      case "STRUCTURE":
+        $this->planet->structures = [$item];
+        break;
+      case "RESEARCH":
+        $this->planet->researches = [$item];
+        break;
+      default:
+        break;
+    }
+
+    $this->planet->resources = $resourceController->refreshResources();
+
+    $this->sendSuccessResponse($this->planet->toArray());
   }
 
 
   /**
-   * Calcul de la nouvelle quantité des ressources sur la planète
+   * Finalisation de l'upgrade d'un item d'une planète
+   * 
+   * @param StructureController|ResearchController $itemController Contrôleur des items
+   * @param integer $planetId Identifiant de la planète
    */
-  private function calculateNewQuantity(): void {
-    // Calcul de la nouvelle quantité des ressources
-    foreach ($this->planet->resources as &$resource) {
-      $currentDate = new DateTime();
+  private function finishUpgradeItemPlanet(StructureController|ResearchController $itemController, int $planetId): void {
+    $itemId = $this->params[1] ?? "";
 
-      // Seule les ressources différentes de l'énergie sont dépendantes du temps
-      if ($resource->id === 3) {
-        $resource->quantity += $resource->production;
+    $this->planet = $this->planetDao->findOne($planetId);
 
-        if ($resource->production !== 0) {
-          $resource->lastTimeCalc = $currentDate->format("Y-m-d H:i:s");
-        }
-      } else {
-        $originDate = new DateTime($resource->lastTimeCalc);
-        $minutes = (int) round(($currentDate->getTimestamp() - $originDate->getTimestamp()) / 60);
-
-        $resource->quantity += ($resource->production * $minutes);
-
-        if ($minutes !== 0) {
-          $resource->lastTimeCalc = $currentDate->format("Y-m-d H:i:s");
-        }
-      }
+    if (!$this->planet->id) {
+      $this->sendErrorResponse("Planète non trouvée");
+      return;
     }
+
+    // Récupération de l'item
+    $item = $itemController->getItem($itemId);
+
+    if (!$item->id) {
+      return;
+    }
+
+    // Mise à jour des ressources sur la planète avant upgrade
+    $resourceController = new ResourceController($planetId);
+    $this->planet->resources = $resourceController->getResources();
+
+    // Mise à jour de l'item
+    $isUpdateItem = $itemController->finishUpgradeItem($item);
+
+    if (!$isUpdateItem) {
+      return;
+    }
+
+    $item = $itemController->getItem($itemId);
+
+    switch ($item->type) {
+      case "STRUCTURE":
+        $this->planet->structures = [$item];
+        break;
+      case "RESEARCH":
+        $this->planet->researches = [$item];
+        break;
+      default:
+        break;
+    }
+
+    // Mise à jour des ressources sur la planète après upgrade
+    $resourceController->refreshResources($itemId);
+    $resourceController->updateResources();
+
+    $this->planet->resources = $resourceController->refreshResources();
+
+    $this->sendSuccessResponse($this->planet->toArray());
   }
-
-  /**
-   * Evaluation des formules des items d'une planètes (durée de construction, coût, pré-requis)
-   */
-  private function evaluateFormulas(): void {
-    $itemDao = new ItemDao();
-    $allItems = $itemDao->findAllByPlanet($this->planet->id);
-    $formulasCost = $itemDao->findCosts();
-    $prerequisitesItems = $itemDao->findPrerequisites();
-
-    // Récupération des variables pour les formules
-    foreach ($allItems as $item) {
-      $variable = strtolower($item->id);
-      $$variable = $item->level;
-    }
-
-    $itemTypes = ["structures", "researches", "units"];
-
-    foreach ($itemTypes as $itemType) {
-      foreach ($this->planet->{$itemType} as &$item) {
-        /** @var ItemModel $item **/
-
-        // Calcul de la durée de construction
-        $formula = "return " . $item->buildTime . ";";
-        $level = $item->level;
-
-        $item->buildTime = (int) round(eval($formula));
-
-        // Récupération du coût de l'item pour prendre un niveau
-        $item->costs = array_values(
-          array_filter($formulasCost, function (CostModel $formulaCost) use ($item) {
-            return ($formulaCost->itemId === $item->id);
-          })
-        );
-
-        // Calcul des coûts
-        foreach ($item->costs as &$cost) {
-          $formula = "return " . $cost->quantity . ";";
-          $cost->quantity = (int) round(eval($formula));
-        }
-
-        if ($item->level === 0) {
-          // Récupération des pré-requis pour construire l'item
-          $prerequisites = array_values(
-            array_filter($prerequisitesItems, function (PrerequisiteModel $prerequisite) use ($item) {
-              return $prerequisite->itemId === $item->id;
-            })
-          );
-
-          // Récupération des pré-requis non validés
-          foreach ($prerequisites as $prerequisite) {
-            $variable = strtolower($prerequisite->requiredItemId);
-
-            if (isset($$variable) && $$variable < $prerequisite->level) {
-              array_push($item->prerequisites, $prerequisite);
-            }
-          }
-        }
-      }
-    }
-  }
-
-
-  /**
-   * Contrôle de la disponibilité des ressources sur la planète pour upgrade une structure
-   *
-   * @param StructureModel $structure Données de la structure
-   * @return boolean Flag indiquant s'il y a suffisamment de ressources
-   */
-  private function checkAvailabilityResources(StructureModel $structure): bool {
-    foreach ($structure->costs as $cost) {
-      $resource = $this->planet->getResource($cost->resourceId);
-
-      // Si pas de quantité suffisante
-      if ($resource->quantity < $cost->quantity) {
-        return false;
-      }
-
-      // Calcul de la nouvelle quantité de la ressource sur la planète
-      $resource->quantity -= $cost->quantity;
-    }
-
-    return true;
-  }
-
 
   /**
    * Contrôle des données de l'utilisateur 

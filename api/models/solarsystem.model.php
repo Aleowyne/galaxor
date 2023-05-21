@@ -27,7 +27,7 @@ class SolarSystemModel {
       "id" => $this->id,
       "name" => $this->name,
       "planets" => array_map(function (PlanetModel $planet) {
-        return $planet->toSimpleArray();
+        return $planet->toArray();
       }, $this->planets)
     ];
   }

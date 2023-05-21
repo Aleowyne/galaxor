@@ -3,6 +3,7 @@
 class ItemModel {
   public string $id;
   public string $name;
+  public string $type;
   public int $level;
   public string|int $buildTime;
   public int $upgradeInProgress;
@@ -20,6 +21,7 @@ class ItemModel {
   public function __construct(array $item = []) {
     $this->id = $item["item_id"] ?? "";
     $this->name = $item["item_name"] ?? "";
+    $this->type = $item["item_type"] ?? "";
     $this->level = $item["level"] ?? 0;
     $this->buildTime = $item["build_time"] ?? 0;
     $this->upgradeInProgress = $item["upgrade_in_progress"] ?? 0;

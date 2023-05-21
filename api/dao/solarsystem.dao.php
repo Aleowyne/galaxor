@@ -80,7 +80,7 @@ class SolarSystemDao extends Database {
       $solarSystem->id = $result[$index] ?? 0;
       $solarSystem->name = $name;
 
-      array_push($solarSystems, $solarSystem);
+      $solarSystems[] = $solarSystem;
     }
 
     return $solarSystems;

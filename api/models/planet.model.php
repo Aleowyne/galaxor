@@ -9,6 +9,7 @@ class PlanetModel {
   public array $resources;
   /** @var StructureModel[] $structures **/
   public array $structures;
+  /** @var ResearchModel[] $structures **/
   public array $researches;
   public array $units;
 
@@ -28,47 +29,6 @@ class PlanetModel {
     $this->units = [];
   }
 
-  /**
-   * Récupération de la ressource de la planète
-   *
-   * @param integer $resourceId Identifiant de la ressource
-   * @return ResourceModel Données de la ressource
-   */
-  public function getResource(int $resourceId): ResourceModel {
-    return current(array_filter($this->resources, function (ResourceModel $resource) use ($resourceId) {
-      return ($resource->id === $resourceId);
-    }));
-  }
-
-
-  /**
-   * Récupération de la structure de la planète
-   *
-   * @param string $structureId Identifiant de la structure
-   * @return StructureModel Données de la structure
-   */
-  public function getStructure(string $structureId): StructureModel {
-    return current(array_filter($this->structures, function (StructureModel $structure) use ($structureId) {
-      return ($structure->id === $structureId);
-    }));
-  }
-
-
-  /**
-   * Transformation des données de la planète sous forme de tableau :
-   * Identifiant, nom, position et id propriétaire
-   *
-   * @return mixed[] Données de la planète
-   */
-  public function toSimpleArray(): array {
-    return [
-      "id" => $this->id,
-      "name" => $this->name,
-      "position" => $this->position,
-      "user_id" => $this->userId
-    ];
-  }
-
 
   /**
    * Transformation des données de la planète sous forme de tableau
@@ -76,31 +36,46 @@ class PlanetModel {
    * @return mixed[] Données de la planète
    */
   public function toArray(): array {
-    return [
+    $arrayPlanet = [
       "id" => $this->id,
       "name" => $this->name,
       "position" => $this->position,
-      "user_id" => $this->userId,
-      "resources" => array_map(function (ResourceModel $resource) {
-        return $resource->toArray();
-      }, $this->resources),
-      "structures" => array_map(function (StructureModel $structure) {
-        return $structure->toArray();
-      }, $this->structures),
+      "user_id" => $this->userId
     ];
-  }
 
-  /**
-   * Transformation des données de la planète sous forme de tableau :
-   * Ressources de la planète
-   *
-   * @return mixed[] Données de la planète
-   */
-  public function toResourcesArray(): array {
-    return [
-      "resources" => array_map(function (ResourceModel $resource) {
-        return $resource->toArray();
-      }, $this->resources)
-    ];
+    // Ressources
+    if ($this->resources) {
+      $resources = [
+        "resources" => array_map(function (ResourceModel $resource) {
+          return $resource->toArray();
+        }, $this->resources)
+      ];
+
+      $arrayPlanet = array_merge($arrayPlanet, $resources);
+    }
+
+    // Structures
+    if ($this->structures) {
+      $structures = [
+        "structures" => array_map(function (StructureModel $structure) {
+          return $structure->toArray();
+        }, $this->structures)
+      ];
+
+      $arrayPlanet = array_merge($arrayPlanet, $structures);
+    }
+
+    // Recherches
+    if ($this->researches) {
+      $researches = [
+        "researches" => array_map(function (ResearchModel $research) {
+          return $research->toArray();
+        }, $this->researches)
+      ];
+
+      $arrayPlanet = array_merge($arrayPlanet, $researches);
+    }
+
+    return $arrayPlanet;
   }
 }

@@ -51,27 +51,14 @@ class PlanetDao extends Database {
     $params = [["id" => $id]];
 
     $result = $this->select(
-      "SELECT DISTINCT p.id, p.name, p.position, p.user_id, ps.size, pb.resource_id, 
-              r.name AS resource_name, pb.bonus, pr.quantity, pr.last_time_calc
+      "SELECT DISTINCT p.id, p.name, p.position, p.user_id, ps.size
         FROM planet AS p
         NATURAL JOIN planet_size AS ps
-        NATURAL JOIN position_bonus AS pb
-        INNER JOIN planet_resource AS pr
-          ON p.id = pr.planet_id
-        INNER JOIN resource AS r
-          ON pb.resource_id = r.id
-          AND pr.resource_id = r.id
-        WHERE p.id = :id
-        ORDER BY pb.resource_id",
+        WHERE p.id = :id",
       $params
     );
 
     $planet = new PlanetModel($result[0] ?? []);
-
-    foreach ($result as $res) {
-      $resource = new ResourceModel($res);
-      array_push($planet->resources, $resource);
-    }
 
     return $planet;
   }
@@ -109,7 +96,7 @@ class PlanetDao extends Database {
       $planet->name = $param["name"];
       $planet->position = $param["position"];
 
-      array_push($planets, $planet);
+      $planets[] = $planet;
     }
 
     return $planets;

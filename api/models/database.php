@@ -105,7 +105,7 @@ class Database {
       if (!$params) {
         $stmt->execute();
 
-        array_push($this->lastIds, (int) $this->connection->lastInsertId());
+        $this->lastIds[] = (int) $this->connection->lastInsertId();
         $this->nbRows += $stmt->rowCount();
 
         return $stmt;
@@ -115,7 +115,7 @@ class Database {
       foreach ($params as $param) {
         $stmt->execute($param);
 
-        array_push($this->lastIds, (int) $this->connection->lastInsertId());
+        $this->lastIds[] = (int) $this->connection->lastInsertId();
         $this->nbRows += $stmt->rowCount();
       }
 

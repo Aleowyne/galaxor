@@ -15,7 +15,7 @@ $requestMethod = $_SERVER["REQUEST_METHOD"];
 $params = [];
 
 foreach ($_GET as $param) {
-  array_push($params, $param);
+  $params[] = $param;
 }
 
 try {

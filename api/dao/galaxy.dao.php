@@ -80,7 +80,7 @@ class GalaxyDao extends Database {
       $galaxy->id = $result[$index] ?? 0;
       $galaxy->name = $name;
 
-      array_push($galaxies, $galaxy);
+      $galaxies[] = $galaxy;
     }
 
     return $galaxies;

@@ -1,18 +1,26 @@
 <?php
 class ItemDao extends Database {
   /**
-   * Sélection des items (structures, recherches, unités) d'une planète en base
+   * Sélection des items d'une planète en base, en fonction d'un type d'item 
    * 
    * @param integer $planetId Identifiant de la planète
+   * @param string $itemType Type de l'item
    * @return ItemModel[] Items de la planète
    */
-  public function findAllByPlanet(int $planetId): array {
-    $params = [["planet_id" => $planetId]];
+  public function findAllByPlanet(int $planetId, string $itemType = "%"): array {
+    $params = [[
+      "planet_id" => $planetId,
+      "item_type" => $itemType
+    ]];
 
     $result = $this->select(
-      "SELECT pi.item_id, pi.level
+      "SELECT pi.item_id, i.name AS item_name, i.type AS item_type, pi.level, 
+              pi.upgrade_in_progress, pi.time_end_upgrade, i.build_time
         FROM planet_item AS pi
+        INNER JOIN item AS i
+          ON pi.item_id = i.id
         WHERE pi.planet_id = :planet_id
+          AND i.type LIKE :item_type
         ORDER BY pi.item_id",
       $params
     );
@@ -20,6 +28,36 @@ class ItemDao extends Database {
     return array_map(function (array $res) {
       return new ItemModel($res);
     }, $result);
+  }
+
+  /**
+   * Sélection d'un item d'une planète en base
+   * 
+   * @param string $itemId Identifiant de l'item
+   * @param integer $planetId Identifiant de la planète
+   * @param string $itemType Type de l'item
+   * @return ItemModel Données de l'item de la planète
+   */
+  public function findOneByPlanet(string $itemId, int $planetId, string $itemType = "%"): ItemModel {
+    $params = [[
+      "planet_id" => $planetId,
+      "item_id" => $itemId,
+      "item_type" => $itemType
+    ]];
+
+    $result = $this->select(
+      "SELECT pi.item_id, i.name AS item_name, i.type AS item_type, pi.level, 
+              pi.upgrade_in_progress, pi.time_end_upgrade, i.build_time
+        FROM planet_item AS pi
+        INNER JOIN item AS i
+          ON pi.item_id = i.id
+        WHERE pi.planet_id = :planet_id
+          AND pi.item_id = :item_id
+          AND i.type LIKE :item_type",
+      $params
+    );
+
+    return new ItemModel($result[0] ?? []);
   }
 
 
@@ -60,5 +98,33 @@ class ItemDao extends Database {
     return array_map(function (array $res) {
       return new PrerequisiteModel($res);
     }, $result);
+  }
+
+
+  /**
+   * Mise à jour d'un item d'une planète dans la base
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @param ItemModel $item Données de l'item
+   * @return boolean Flag indiquant si la mise à jour a réussi
+   */
+  public function updateOne(int $planetId, ItemModel $item): bool {
+    $params = [[
+      "planet_id" => $planetId,
+      "item_id" => $item->id,
+      "level" => $item->level,
+      "upgrade_in_progress" => $item->upgradeInProgress,
+      "time_end_upgrade" => $item->timeEndUpgrade
+    ]];
+
+    return $this->update(
+      "UPDATE planet_item
+        SET level = :level,
+            upgrade_in_progress = :upgrade_in_progress,
+            time_end_upgrade = :time_end_upgrade
+        WHERE planet_id = :planet_id
+          AND item_id = :item_id",
+      $params
+    );
   }
 }

@@ -123,7 +123,7 @@ class BaseController {
         }
       }
 
-      array_push($names, $name);
+      $names[] = $name;
     }
 
     return $names;
