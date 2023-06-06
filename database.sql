@@ -111,32 +111,52 @@ CREATE TABLE IF NOT EXISTS planet_resource (
 );
 
 CREATE TABLE IF NOT EXISTS planet_item (
-  planet_id INT NOT NULL,
-  item_id VARCHAR(10) NOT NULL,
+  planet_id INT,
+  item_id VARCHAR(10),
   level TINYINT NOT NULL,
   upgrade_in_progress BOOLEAN NOT NULL DEFAULT FALSE,
-  time_end_upgrade TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  end_time_upgrade TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (planet_id, item_id),
+  FOREIGN KEY (planet_id) REFERENCES planet(id) ON DELETE CASCADE,
+  FOREIGN KEY (item_id) REFERENCES item(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS planet_unit (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  planet_id INT,
+  item_id VARCHAR(10),
+  create_in_progress BOOLEAN NOT NULL DEFAULT TRUE,
+  end_time_create TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
   FOREIGN KEY (planet_id) REFERENCES planet(id) ON DELETE CASCADE,
   FOREIGN KEY (item_id) REFERENCES item(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS fight (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  attack_planet INT NOT NULL,
-  defense_planet INT NOT NULL,
+  attack_planet INT,
+  defense_planet INT,
   time_fight TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   victory BOOLEAN NOT NULL,
   FOREIGN KEY (attack_planet) REFERENCES planet(id),
   FOREIGN KEY (defense_planet) REFERENCES planet(id)
 );
 
-CREATE TABLE IF NOT EXISTS fight_item (
+CREATE TABLE IF NOT EXISTS fight_unit (
   fight_id INT,
-  item_id VARCHAR(10),
-  PRIMARY KEY (fight_id, item_id),
+  unit_id INT,
+  PRIMARY KEY (fight_id, unit_id),
   FOREIGN KEY (fight_id) REFERENCES fight(id),
-  FOREIGN KEY (item_id) REFERENCES planet_item(item_id)
+  FOREIGN KEY (unit_id) REFERENCES planet_unit(id)
+);
+
+CREATE TABLE IF NOT EXISTS fight_resource (
+  fight_id INT,
+  resource_id TINYINT,
+  quantity INT NOT NULL,
+  PRIMARY KEY (fight_id, resource_id),
+  FOREIGN KEY (fight_id) REFERENCES fight(id),
+  FOREIGN KEY (resource_id) REFERENCES resource(id)
 );
 
 DELIMITER $$
@@ -151,8 +171,12 @@ BEGIN
 
   UPDATE planet_item 
     SET level = 0,
-        time_end_upgrade = CURRENT_TIMESTAMP
+        end_time_upgrade = CURRENT_TIMESTAMP
     WHERE planet_id = NEW.id;
+
+  UPDATE planet_unit
+    SET active = FALSE
+    WHERE planet_id = NEW.id;  
 END $$
 
 CREATE TRIGGER `after_planet_create` 
