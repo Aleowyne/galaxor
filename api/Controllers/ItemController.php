@@ -11,15 +11,15 @@ use DateTime;
 use DateInterval;
 
 class ItemController extends BaseController {
-  private $itemDao = null;
-  protected $planetId = 0;
+  private ItemDao $itemDao;
+  protected int $planetId;
 
   /**
    * Constructeur
    *
    * @param integer $planetId Identifiant de la planète
    */
-  public function __construct(int $planetId) {
+  public function __construct(int $planetId = 0) {
     $this->itemDao = new ItemDao();
     $this->planetId = $planetId;
   }
@@ -49,7 +49,7 @@ class ItemController extends BaseController {
     $item->upgradeInProgress = true;
 
     // Mise à jour de l'item
-    $isUpdate = $this->itemDao->updateOne($this->planetId, $item);
+    $isUpdate = $this->itemDao->updateOneByPlanet($this->planetId, $item);
 
     if (!$isUpdate) {
       throw new Exceptions\InternalErrorException("Upgrade a échoué");
@@ -80,10 +80,36 @@ class ItemController extends BaseController {
     }
 
     // Mise à jour de l'item
-    $isUpdate = $this->itemDao->updateOne($this->planetId, $item);
+    $isUpdate = $this->itemDao->updateOneByPlanet($this->planetId, $item);
 
     if (!$isUpdate) {
       throw new Exceptions\InternalErrorException("Upgrade a échoué");
+    }
+  }
+
+
+  /**
+   * Réinitialisation des items au niveau 0
+   *
+   * @param ItemModel[] $items Données des items
+   */
+  public function resetItems(array $items): void {
+    if (!$items) {
+      return;
+    }
+
+    $currentDate = new DateTime();
+
+    foreach ($items as $item) {
+      $item->level = 0;
+      $item->upgradeInProgress = false;
+      $item->endTimeUpgrade = $currentDate->format(self::FORMAT_DATE);
+    }
+
+    $isUpdate = $this->itemDao->updateMultiplesByPlanet($this->planetId, $items);
+
+    if (!$isUpdate) {
+      throw new Exceptions\InternalErrorException("Réinitialisation level 1 a échoué");
     }
   }
 

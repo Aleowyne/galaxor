@@ -15,6 +15,8 @@ class PlanetModel {
   public array $researches;
   /** @var UnitModel[] $units **/
   public array $units;
+  /** @var FightModel[] $fights **/
+  public array $fights;
 
   /**
    * Constructeur
@@ -30,6 +32,7 @@ class PlanetModel {
     $this->structures = [];
     $this->researches = [];
     $this->units = [];
+    $this->fights = [];
   }
 
 
@@ -88,6 +91,17 @@ class PlanetModel {
       ];
 
       $arrayPlanet = array_merge($arrayPlanet, $unitsList);
+    }
+
+    // Combats
+    if ($this->fights) {
+      $fightsList = [
+        "fights" => array_map(function (FightModel $fight) {
+          return $fight->toArray();
+        }, $this->fights)
+      ];
+
+      $arrayPlanet = array_merge($arrayPlanet, $fightsList);
     }
 
     return $arrayPlanet;

@@ -40,4 +40,19 @@ class ResourceModel {
       "production" => $this->production
     ];
   }
+
+
+  /**
+   * Transformation des données de la ressource sous forme de tableau
+   * pour les combats
+   *
+   * @return mixed[] Données de la ressource
+   */
+  public function toArrayForFight(): array {
+    return [
+      "id" => $this->id,
+      "name" => $this->name,
+      "quantity" => $this->quantity
+    ];
+  }
 }

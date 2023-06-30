@@ -6,7 +6,6 @@ class UserModel {
   public int $id;
   public string $name;
   public string $mailAddress;
-  public string $password;
 
   /**
    * Constructeur
@@ -17,7 +16,6 @@ class UserModel {
     $this->id = $user["id"] ?? 0;
     $this->name = $user["name"] ?? "";
     $this->mailAddress = $user["mail_address"] ?? "";
-    $this->password = $user["password"] ?? "";
   }
 
   /**

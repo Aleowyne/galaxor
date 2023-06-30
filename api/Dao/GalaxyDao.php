@@ -51,7 +51,7 @@ class GalaxyDao extends Database {
    * @param string[] $names Nom des galaxies
    * @return GalaxyModel[] Liste des galaxies
    */
-  public function insertMultiples(int $universeId, array $names): array {
+  public function insertMultiplesByUniverse(int $universeId, array $names): array {
     $params = array_map(function (string $name) use ($universeId) {
       return [
         "name" => $name,

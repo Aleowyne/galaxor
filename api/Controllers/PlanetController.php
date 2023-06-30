@@ -7,127 +7,13 @@ use App\Models\PlanetModel;
 use App\Exceptions;
 
 class PlanetController extends BaseController {
-  private $planetDao = null;
-  private $requestMethod = "";
-  private $params = [];
-  private $body = [];
+  private PlanetDao $planetDao;
 
   /**
    * Constructeur
-   *
-   * @param string $requestMethod Méthode de la requête
-   * @param mixed[] $params Paramètres de la requête
-   * @param mixed[] $body Contenu de la requête
    */
-  public function __construct(string $requestMethod = "", array $params = [], array $body = []) {
+  public function __construct() {
     $this->planetDao = new PlanetDao();
-    $this->requestMethod = $requestMethod;
-    $this->params = $params;
-    $this->body = $body;
-  }
-
-
-  /**
-   * Traitement de la requête
-   *
-   * @param string $uri URI
-   */
-  public function processRequest(string $uri): void {
-    // Endpoint /api/planets/:planet_id
-    if (preg_match("/\/api\/planets\/\d+$/", $uri)) {
-      switch ($this->requestMethod) {
-          // Récupération d'une planète
-        case "GET":
-          $planet = $this->getPlanet();
-          $this->sendSuccessResponse($planet->toArray());
-          break;
-
-          // Assignation d'un utilisateur à une planète
-        case "PUT":
-          $this->assignUserPlanet();
-          $this->sendSuccessResponse();
-
-          break;
-
-        default:
-          throw new Exceptions\MethodNotAllowedException();
-      }
-    }
-
-    // Endpoint /api/planets
-    elseif (preg_match("/\/api\/planets$/", $uri)) {
-      // Récupération des planètes
-      if ($this->requestMethod === "GET") {
-        $planets = $this->getPlanets();
-
-        $arrayPlanets = [
-          "planets" => array_map(function (PlanetModel $planet) {
-            return $planet->toArray();
-          }, $planets)
-        ];
-
-        $this->sendSuccessResponse($arrayPlanets);
-      } else {
-        throw new Exceptions\MethodNotAllowedException();
-      }
-    }
-
-    // Endpoint /api/planets/:planet_id/ressources
-    elseif (preg_match("/\/api\/planets\/\d+\/resources$/", $uri)) {
-      // Mise à jour des ressources sur une planète
-      if ($this->requestMethod === "PUT") {
-        $planet = $this->updateResourcesPlanet();
-        $this->sendSuccessResponse($planet->toArray());
-      } else {
-        throw new Exceptions\MethodNotAllowedException();
-      }
-    }
-
-    // Endpoint /api/planets/:planet_id/structures/:structure_id
-    elseif (preg_match("/\/api\/planets\/\d+\/structures\/[A-Z_]+$/", $uri)) {
-      // Upgrade d'une structure
-      if ($this->requestMethod === "PUT") {
-        $planet = $this->upgradeStructurePlanet();
-        $this->sendSuccessResponse($planet->toArray());
-      } else {
-        throw new Exceptions\MethodNotAllowedException();
-      }
-    }
-
-    // Endpoint /api/planets/:planet_id/researches/:research_id
-    elseif (preg_match("/\/api\/planets\/\d+\/researches\/[A-Z_]+$/", $uri)) {
-      // Upgrade d'une recherche
-      if ($this->requestMethod === "PUT") {
-        $planet = $this->upgradeResearchPlanet();
-        $this->sendSuccessResponse($planet->toArray());
-      } else {
-        throw new Exceptions\MethodNotAllowedException();
-      }
-    }
-
-    // Endpoint /api/planets/:planet_id/units
-    elseif (preg_match("/\/api\/planets\/\d+\/units$/", $uri)) {
-      // Début de la création d'une unité
-      if ($this->requestMethod === "POST") {
-        $planet = $this->startCreateUnitPlanet();
-        $this->sendCreatedResponse($planet->toArray());
-      } else {
-        throw new Exceptions\MethodNotAllowedException();
-      }
-    }
-
-    // Endpoint /api/planets/:planet_id/units/:unit_id
-    elseif (preg_match("/\/api\/planets\/\d+\/units\/\d+$/", $uri)) {
-      // Finalisation de la création d'une unité
-      if ($this->requestMethod === "PUT") {
-        $planet = $this->finishCreateUnitPlanet();
-        $this->sendSuccessResponse($planet->toArray());
-      } else {
-        throw new Exceptions\MethodNotAllowedException();
-      }
-    } else {
-      throw new Exceptions\NotFoundException("URL non valide");
-    }
   }
 
 
@@ -137,9 +23,7 @@ class PlanetController extends BaseController {
    * @param integer $planetId Identifiant de la planète
    * @return PlanetModel Données de la planète
    */
-  public function getPlanet(int $planetId = 0): PlanetModel {
-    $planetId = (int) ($this->params[0] ?? $planetId);
-
+  public function getPlanet(int $planetId): PlanetModel {
     $planet = $this->planetDao->findOne($planetId);
 
     if (!$planet->id) {
@@ -188,33 +72,47 @@ class PlanetController extends BaseController {
 
 
   /**
+   * Récupération des combats d'une planète
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @return PlanetModel Données de la planète
+   */
+  public function getFights(int $planetId): PlanetModel {
+    $planet = $this->planetDao->findOne($planetId);
+
+    if (!$planet->id) {
+      throw new Exceptions\NotFoundException("Planète non trouvée");
+    }
+
+    // Récupération des combats
+    $fightController = new FightController();
+    $planet->fights = $fightController->getFightsPlanet($planet->id);
+
+    return $planet;
+  }
+
+
+  /**
    * Création de planètes pour plusieurs systèmes solaires
    *
    * @param integer $solarSystemId Identifiant du système solaire
    * @return PlanetModel[] Liste des planètes
    */
-  public function createPlanets(int $solarSystemId = 0): array {
-    $solarSystemId = (int) ($this->params[0] ?? $solarSystemId);
-
+  public function createPlanets(int $solarSystemId): array {
     // Génération du nom des planètes
     $names = $this->randomName(rand(4, 10));
 
-    return $this->planetDao->insertMultiples($solarSystemId, $names);
+    return $this->planetDao->insertMultiplesBySolarSystem($solarSystemId, $names);
   }
 
 
   /**
    * Assignation d'un utilisateur à une planète
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @param integer $userId Identifiant de l'utilisateur
    */
-  private function assignUserPlanet(): void {
-    // Données de l'utilisateur non valide
-    if (!$this->checkBodyUserId()) {
-      throw new Exceptions\UnprocessableException();
-    }
-
-    $planetId = (int) ($this->params[0] ?? 0);
-    $userId = (int) $this->body["user_id"];
-
+  public function assignUser(int $planetId, int $userId): void {
     // Vérification de l'existence de la planète
     $planet = $this->planetDao->findOne($planetId);
 
@@ -235,13 +133,48 @@ class PlanetController extends BaseController {
 
 
   /**
-   * Mise à jour des ressources d'une planète
+   * Lancement d'un combat
    *
+   * @param integer $attackPlanetId Identifiant de la planète attaquante
+   * @param integer $defensePlanetId Identifiant de la planète attaquée
+   * @param integer[] $attackUnitIds Identifiants des unités de la planète attaquante
    * @return PlanetModel Données de la planète
    */
-  private function updateResourcesPlanet(): PlanetModel {
-    $planetId = (int) ($this->params[0] ?? 0);
+  public function createFight(int $attackPlanetId, int $defensePlanetId, array $attackUnitIds): PlanetModel {
+    // Récupération des données de la planète attaquante
+    $attackPlanet = $this->getPlanet($attackPlanetId);
 
+    // Récupération des données de la planète attaquée
+    $defensePlanet = $this->getPlanet($defensePlanetId);
+
+    // Si la planète n'appartient à personne
+    if ($defensePlanet->userId === 0) {
+      throw new Exceptions\InternalErrorException("Impossible d'attaquer une planète sans propriétaire");
+    }
+
+    // Si les 2 planètes appartiennent au même propriétaire
+    if ($defensePlanet->userId === $attackPlanet->userId) {
+      throw new Exceptions\InternalErrorException("Impossible d'attaquer une planète dont vous êtes le propriétaire");
+    }
+
+    // Lancement du combat
+    $fightController = new FightController($attackPlanet, $defensePlanet);
+    $fightId = $fightController->createFightPlanet($attackUnitIds);
+
+    $attackPlanet = $this->getPlanet($attackPlanetId);
+    $attackPlanet->fights[] = $fightController->getFight($fightId);
+
+    return $attackPlanet;
+  }
+
+
+  /**
+   * Mise à jour des ressources d'une planète
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @return PlanetModel Données de la planète
+   */
+  public function updateResources(int $planetId): PlanetModel {
     // Vérification de l'existence de la planète
     $planet = $this->planetDao->findOne($planetId);
 
@@ -261,25 +194,20 @@ class PlanetController extends BaseController {
   /**
    * Upgrade d'une structure d'une planète
    *
+   * @param integer $planetId Identifiant de la planète
+   * @param string $itemId Identifiant de la structure
+   * @param string $action Action sur la structure (start ou finish)
    * @return PlanetModel Données de la planète
    */
-  private function upgradeStructurePlanet(): PlanetModel {
-    // Contenu de la requête non valide
-    if (!$this->checkBodyUpgradeItem()) {
-      throw new Exceptions\UnprocessableException();
-    }
-
-    $planetId = (int) ($this->params[0] ?? 0);
-    $action = $this->body["upgrade"];
-
+  public function upgradeStructure(int $planetId, string $itemId, string $action): PlanetModel {
     $structureController = new StructureController($planetId);
 
     if ($action === "start") {
-      // Déclenchement de l'upgrade
-      return $this->startUpgradeItemPlanet($structureController, $planetId);
+      // Déclenchement de l'upgrade de la structure
+      return $this->startUpgradeItem($structureController, $planetId, $itemId);
     } else {
-      // Finalisation de l'upgrade
-      return $this->finishUpgradeItemPlanet($structureController, $planetId);
+      // Finalisation de l'upgrade de la structure
+      return $this->finishUpgradeItem($structureController, $planetId, $itemId);
     }
   }
 
@@ -287,26 +215,88 @@ class PlanetController extends BaseController {
   /**
    * Upgrade d'une recherche d'une planète
    *
+   * @param integer $planetId Identifiant de la planète
+   * @param string $itemId Identifiant de la recherche
+   * @param string $action Action sur la recherche (start ou finish)
    * @return PlanetModel Données de la planète
    */
-  private function upgradeResearchPlanet(): PlanetModel {
-    // Contenu de la requête non valide
-    if (!$this->checkBodyUpgradeItem()) {
-      throw new Exceptions\UnprocessableException();
-    }
-
-    $planetId = (int) ($this->params[0] ?? 0);
-    $action = $this->body["upgrade"];
-
+  public function upgradeResearch(int $planetId, string $itemId, string $action): PlanetModel {
     $researchController = new ResearchController($planetId);
 
     if ($action === "start") {
-      // Déclenchement de l'upgrade
-      return $this->startUpgradeItemPlanet($researchController, $planetId);
+      // Déclenchement de l'upgrade de la recherche
+      return $this->startUpgradeItem($researchController, $planetId, $itemId);
     } else {
-      // Finalisation de l'upgrade
-      return $this->finishUpgradeItemPlanet($researchController, $planetId);
+      // Finalisation de l'upgrade de la recherche
+      return $this->finishUpgradeItem($researchController, $planetId, $itemId);
     }
+  }
+
+
+  /**
+   * Création d'une unité sur une planète
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @param string $itemId Identifiant de l'item
+   * @return PlanetModel Données de la planète
+   */
+  public function startCreateUnit(int $planetId, string $itemId): PlanetModel {
+    $planet = $this->planetDao->findOne($planetId);
+
+    if (!$planet->id) {
+      throw new Exceptions\InternalErrorException("Planète non trouvée");
+    }
+
+    // Récupération de l'item
+    $unitController = new UnitController($planetId);
+    $unit = $unitController->getItem($itemId);
+
+    // Récupération des ressources
+    $resourceController = new ResourceController($planetId);
+    $planet->resources = $resourceController->getResourcesPlanet();
+
+    // Contrôle de la disponibilité des ressources pour créer l'unité
+    if (!$resourceController->checkAvailabilityResources($unit)) {
+      throw new Exceptions\InternalErrorException("Ressources insuffisantes");
+    }
+
+    // Mise à jour des ressources sur la planète
+    $resourceController->updateResourcesPlanet();
+
+    // Création de l'unité
+    $unit = $unitController->startCreateUnitPlanet($unit);
+
+    $planet->units = [$unit];
+    $planet->resources = $resourceController->refreshResources();
+
+    return $planet;
+  }
+
+
+  /**
+   * Finalisation de la création d'une unité sur une planète
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @param integer $unitId Identifiant de l'unité
+   * @return PlanetModel Données de la planète
+   */
+  public function finishCreateUnit(int $planetId, int $unitId): PlanetModel {
+    $planet = $this->planetDao->findOne($planetId);
+
+    if (!$planet->id) {
+      throw new Exceptions\InternalErrorException("Planète non trouvée");
+    }
+
+    // Récupération de l'unité
+    $unitController = new UnitController($planetId);
+    $unit = $unitController->getUnitPlanet($unitId);
+
+    // Finalisation de la création de l'unité
+    $unit = $unitController->finishCreateUnitPlanet($unit);
+
+    $planet->units = [$unit];
+
+    return $planet;
   }
 
 
@@ -315,11 +305,10 @@ class PlanetController extends BaseController {
    *
    * @param StructureController|ResearchController $itemController Contrôleur des items
    * @param integer $planetId Identifiant de la planète
+   * @param string $itemId Identifiant de l'item
    * @return PlanetModel Données de la planète
    */
-  private function startUpgradeItemPlanet(StructureController|ResearchController $itemController, int $planetId): PlanetModel {
-    $itemId = $this->params[1] ?? "";
-
+  private function startUpgradeItem(StructureController|ResearchController $itemController, int $planetId, string $itemId): PlanetModel {
     $planet = $this->planetDao->findOne($planetId);
 
     if (!$planet->id) {
@@ -369,11 +358,10 @@ class PlanetController extends BaseController {
    *
    * @param StructureController|ResearchController $itemController Contrôleur des items
    * @param integer $planetId Identifiant de la planète
+   * @param string $itemId Identifiant de l'item
    * @return PlanetModel Données de la planète
    */
-  private function finishUpgradeItemPlanet(StructureController|ResearchController $itemController, int $planetId): PlanetModel {
-    $itemId = $this->params[1] ?? "";
-
+  private function finishUpgradeItem(StructureController|ResearchController $itemController, int $planetId, string $itemId): PlanetModel {
     $planet = $this->planetDao->findOne($planetId);
 
     if (!$planet->id) {
@@ -411,115 +399,5 @@ class PlanetController extends BaseController {
     $planet->resources = $resourceController->refreshResources();
 
     return $planet;
-  }
-
-
-  /**
-   * Création d'une unité sur une planète
-   *
-   * @return PlanetModel Données de la planète
-   */
-  private function startCreateUnitPlanet(): PlanetModel {
-    // Contenu de la requête non valide
-    if (!$this->checkBodyCreateUnit()) {
-      throw new Exceptions\UnprocessableException();
-    }
-
-    $planetId = (int) ($this->params[0] ?? 0);
-    $itemId = $this->body["item_id"];
-
-    $planet = $this->planetDao->findOne($planetId);
-
-    if (!$planet->id) {
-      throw new Exceptions\InternalErrorException("Planète non trouvée");
-    }
-
-    // Récupération de l'item
-    $unitController = new UnitController($planetId);
-    $unit = $unitController->getItem($itemId);
-
-    // Récupération des ressources
-    $resourceController = new ResourceController($planetId);
-    $planet->resources = $resourceController->getResourcesPlanet();
-
-    // Contrôle de la disponibilité des ressources pour créer l'unité
-    if (!$resourceController->checkAvailabilityResources($unit)) {
-      throw new Exceptions\InternalErrorException("Ressources insuffisantes");
-    }
-
-    // Mise à jour des ressources sur la planète
-    $resourceController->updateResourcesPlanet();
-
-    // Création de l'unité
-    $unit = $unitController->startCreateUnitPlanet($unit);
-
-    $planet->units = [$unit];
-    $planet->resources = $resourceController->refreshResources();
-
-    return $planet;
-  }
-
-
-  /**
-   * Finalisation de la création d'une unité sur une planète
-   *
-   * @return PlanetModel Données de la planète
-   */
-  private function finishCreateUnitPlanet(): PlanetModel {
-    $planetId = (int) ($this->params[0] ?? 0);
-    $unitId = (int) ($this->params[1] ?? 0);
-
-    $planet = $this->planetDao->findOne($planetId);
-
-    if (!$planet->id) {
-      throw new Exceptions\InternalErrorException("Planète non trouvée");
-    }
-
-    // Récupération de l'unité
-    $unitController = new UnitController($planetId);
-    $unit = $unitController->getUnitPlanet($unitId);
-
-    // Finalisation de la création de l'unité
-    $unit = $unitController->finishCreateUnitPlanet($unit);
-
-    $planet->units = [$unit];
-
-    return $planet;
-  }
-
-
-  /**
-   * Contrôle du contenu de la requête lors de l'assignation d'un utilisateur à une planète
-   *
-   * @return boolean Flag indiquant si les données sont valides
-   */
-  private function checkBodyUserId(): bool {
-    $userId = $this->body["user_id"] ?? "";
-
-    return (bool) $userId;
-  }
-
-
-  /**
-   * Contrôle du contenu de la requête lors de l'upgrade d'un item
-   *
-   * @return boolean Flag indiquant si les données sont valides
-   */
-  private function checkBodyUpgradeItem(): bool {
-    $upgrade = $this->body["upgrade"] ?? "";
-
-    return $upgrade === "start" || $upgrade === "finish";
-  }
-
-
-  /**
-   * Contrôle du contenu de la requête lors de la création d'une unité
-   *
-   * @return boolean Flag indiquant si les données sont valides
-   */
-  private function checkBodyCreateUnit(): bool {
-    $itemId = $this->body["item_id"] ?? "";
-
-    return (bool) $itemId;
   }
 }

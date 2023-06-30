@@ -14,11 +14,14 @@ class StructureDao extends Database {
    * @return StructureModel[] Structures de la planète
    */
   public function findAllByPlanet(int $planetId): array {
-    $params = [["planet_id" => $planetId]];
+    $params = [[
+      "planet_id" => $planetId
+    ]];
 
     $result = $this->select(
       "SELECT pi.item_id, i.name AS item_name, pi.level,
               pi.upgrade_in_progress, pi.end_time_upgrade, i.build_time,
+              i.attack_point, i.defense_point,
               ip.resource_id, ip.production
         FROM planet_item AS pi
         INNER JOIN item AS i
@@ -31,13 +34,13 @@ class StructureDao extends Database {
       $params
     );
 
-    $currentId = 0;
     $structures = [];
-    $structure = new StructureModel();
+    /** @var StructureModel $structure **/
+    $structure = null;
 
     foreach ($result as $res) {
-      if ($currentId !== $res["item_id"]) {
-        if ($currentId) {
+      if (!$structure || $structure->itemId !== $res["item_id"]) {
+        if ($structure) {
           $structures[] = $structure;
         }
 
@@ -49,11 +52,9 @@ class StructureDao extends Database {
       if ($production->resourceId) {
         $structure->formulasProd[] = $production;
       }
-
-      $currentId = $res["item_id"];
     }
 
-    if ($currentId) {
+    if ($structure) {
       $structures[] = $structure;
     }
 

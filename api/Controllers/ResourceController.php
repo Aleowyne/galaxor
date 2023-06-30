@@ -9,10 +9,10 @@ use App\Exceptions;
 use DateTime;
 
 class ResourceController extends BaseController {
-  private $resourceDao = null;
-  private $planetId = 0;
+  private ResourceDao $resourceDao;
+  private int $planetId;
   /** @var ResourceModel[] $resources **/
-  private $resources = [];
+  private array $resources;
 
   /**
    * Constructeur
@@ -35,9 +35,7 @@ class ResourceController extends BaseController {
     $this->resources = $this->resourceDao->findAllByPlanet($this->planetId);
 
     // Calcul de la production et de la nouvelle quantité des ressources
-    $this->refreshResources();
-
-    return $this->resources;
+    return $this->refreshResources();
   }
 
 
@@ -46,11 +44,7 @@ class ResourceController extends BaseController {
    */
   public function updateResourcesPlanet(): void {
     // Mise à jour des ressources sur la planète
-    $isUpdate = $this->resourceDao->updateMultiples($this->planetId, $this->resources);
-
-    if (!$isUpdate) {
-      throw new Exceptions\InternalErrorException("Upgrade a échoué");
-    }
+    $this->resourceDao->updateMultiplesByPlanet($this->planetId, $this->resources);
   }
 
 
@@ -58,7 +52,7 @@ class ResourceController extends BaseController {
    * Calcul de la production et de la nouvelle quantité des ressources
    *
    * @param string $upgradeItemId Identifiant de l'item upgradé
-   * @param ResourceModel[] Liste des ressources
+   * @return ResourceModel[] Liste des ressources
    */
   public function refreshResources(string $upgradeItemId = ""): array {
     if ($this->resources) {
@@ -96,6 +90,74 @@ class ResourceController extends BaseController {
     }
 
     return true;
+  }
+
+
+  /**
+   * Ajout des coûts de construction d'une liste d'unités dans les ressources de la planète
+   *
+   * @param array $units Données des unités
+   * @return ResourceModel[] Liste des ressources
+   */
+  public function addCostsUnitsToResources(array $units): array {
+    $currentDate = new DateTime();
+
+    foreach ($units as $unit) {
+      foreach ($unit->costs as $cost) {
+        $resource = $this->searchResource($cost->resourceId);
+        $resource->quantity += $cost->quantity;
+        $resource->lastTimeCalc = $currentDate->format(self::FORMAT_DATE);
+      }
+    }
+
+    // Mise à jour des ressources sur la planète
+    $this->updateResourcesPlanet();
+
+    return $this->resources;
+  }
+
+
+  /**
+   * Ajout de ressources sur la planète
+   *
+   * @param ResourceModel[] $addResources Ressources à déduire
+   * @return ResourceModel[] Liste des ressources
+   */
+  public function addResources(array $addResources): array {
+    $currentDate = new DateTime();
+
+    foreach ($addResources as $addResource) {
+      $resource = $this->searchResource($addResource->id);
+      $resource->quantity = $resource->quantity + $addResource->quantity;
+      $resource->lastTimeCalc = $currentDate->format(self::FORMAT_DATE);
+    }
+
+    // Mise à jour des ressources
+    $this->updateResourcesPlanet();
+
+    return $this->resources;
+  }
+
+
+  /**
+   * Déduction de ressources sur la planète
+   *
+   * @param ResourceModel[] $subtractResources Ressources à déduire
+   * @return ResourceModel[] Liste des ressources
+   */
+  public function subtractResources(array $subtractResources): array {
+    $currentDate = new DateTime();
+
+    foreach ($subtractResources as $subtractResource) {
+      $resource = $this->searchResource($subtractResource->id);
+      $resource->quantity = $resource->quantity - $subtractResource->quantity;
+      $resource->lastTimeCalc = $currentDate->format(self::FORMAT_DATE);
+    }
+
+    // Mise à jour des ressources
+    $this->updateResourcesPlanet();
+
+    return $this->resources;
   }
 
 

@@ -6,6 +6,7 @@ class UnitModel extends ItemModel {
   public int $id;
   public bool $createInProgress;
   public string $endTimeCreate;
+  public int $quantity;
 
   /**
    * Constructeur
@@ -17,6 +18,7 @@ class UnitModel extends ItemModel {
     $this->id = $unit["id"] ?? 0;
     $this->createInProgress = $unit["create_in_progress"] ?? false;
     $this->endTimeCreate = $unit["end_time_create"] ?? "";
+    $this->quantity = $unit["quantity"] ?? 0;
   }
 
 
@@ -36,6 +38,21 @@ class UnitModel extends ItemModel {
       "freight_capacity" => $this->freightCapacity,
       "create_in_progress" => $this->createInProgress,
       "end_time_create" => $this->endTimeCreate
+    ];
+  }
+
+
+  /**
+   * Transformation des données de l'unité sous forme de tableau
+   * pour les combats
+   *
+   * @return mixed[] Données de l'unité
+   */
+  public function toArrayForFight(): array {
+    return [
+      "item_id" => $this->itemId,
+      "name" => $this->name,
+      "quantity" => $this->quantity
     ];
   }
 }

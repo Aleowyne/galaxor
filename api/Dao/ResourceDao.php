@@ -42,7 +42,7 @@ class ResourceDao extends Database {
    * @param ResourceModel[] $resources Ressources
    * @return boolean Flag indiquant si la mise à jour a réussi
    */
-  public function updateMultiples(int $planetId, array $resources): bool {
+  public function updateMultiplesByPlanet(int $planetId, array $resources): bool {
     $params = array_map(function (ResourceModel $resource) use ($planetId) {
       return [
         "planet_id" => $planetId,

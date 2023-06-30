@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS fight (
   attack_planet INT,
   defense_planet INT,
   time_fight TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  victory BOOLEAN NOT NULL,
+  result enum('WIN', 'LOSE', 'DRAW'),
   FOREIGN KEY (attack_planet) REFERENCES planet(id),
   FOREIGN KEY (defense_planet) REFERENCES planet(id)
 );
@@ -146,8 +146,17 @@ CREATE TABLE IF NOT EXISTS fight_unit (
   fight_id INT,
   unit_id INT,
   PRIMARY KEY (fight_id, unit_id),
-  FOREIGN KEY (fight_id) REFERENCES fight(id),
+  FOREIGN KEY (fight_id) REFERENCES fight(id) ON DELETE CASCADE,
   FOREIGN KEY (unit_id) REFERENCES planet_unit(id)
+);
+
+CREATE TABLE IF NOT EXISTS fight_item (
+  fight_id INT,
+  planet_id INT,
+  item_id VARCHAR(10),
+  PRIMARY KEY (fight_id, planet_id, item_id),
+  FOREIGN KEY (fight_id) REFERENCES fight(id) ON DELETE CASCADE,
+  FOREIGN KEY (planet_id, item_id) REFERENCES planet_item(planet_id, item_id)
 );
 
 CREATE TABLE IF NOT EXISTS fight_resource (
@@ -155,7 +164,7 @@ CREATE TABLE IF NOT EXISTS fight_resource (
   resource_id TINYINT,
   quantity INT NOT NULL,
   PRIMARY KEY (fight_id, resource_id),
-  FOREIGN KEY (fight_id) REFERENCES fight(id),
+  FOREIGN KEY (fight_id) REFERENCES fight(id) ON DELETE CASCADE,
   FOREIGN KEY (resource_id) REFERENCES resource(id)
 );
 

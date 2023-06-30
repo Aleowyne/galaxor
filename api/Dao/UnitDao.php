@@ -13,7 +13,9 @@ class UnitDao extends Database {
    * @return UnitModel Données de l'item de la planète
    */
   public function findOne(int $unitId): UnitModel {
-    $params = [["id" => $unitId]];
+    $params = [[
+      "id" => $unitId
+    ]];
 
     $result = $this->select(
       "SELECT pu.id, pu.item_id, i.name AS item_name, i.type AS item_type,
@@ -38,7 +40,9 @@ class UnitDao extends Database {
    * @return UnitModel[] Données des unités de la planète
    */
   public function findAllByPlanet(string $planetId): array {
-    $params = [["planet_id" => $planetId]];
+    $params = [[
+      "planet_id" => $planetId
+    ]];
 
     $result = $this->select(
       "SELECT pu.id, pu.item_id, i.name AS item_name, i.type AS item_type,
@@ -65,7 +69,7 @@ class UnitDao extends Database {
    * @param UnitModel $unit Données de l'unité
    * @return integer Identifiant de l'unité ajoutée
    */
-  public function insertOne(int $planetId, UnitModel $unit): int {
+  public function insertOneByPlanet(int $planetId, UnitModel $unit): int {
     $params = [[
       "planet_id" => $planetId,
       "item_id" => $unit->itemId,
@@ -90,7 +94,7 @@ class UnitDao extends Database {
    * @param UnitModel $unit Données de l'unité
    * @return boolean Flag indiquant si la mise à jour a réussi
    */
-  public function updateOne(int $planetId, UnitModel $unit): bool {
+  public function updateOneByPlanet(int $planetId, UnitModel $unit): bool {
     $params = [[
       "planet_id" => $planetId,
       "item_id" => $unit->itemId,
@@ -102,6 +106,28 @@ class UnitDao extends Database {
         SET create_in_progress = :create_in_progress
         WHERE planet_id = :planet_id
           AND item_id = :item_id",
+      $params
+    );
+  }
+
+
+  /**
+   * Désactivation d'unités dans la base
+   *
+   * @param UnitModel[] $units Liste des unités à désactiver
+   * @return boolean Flag indiquant si la mise à jour a réussi
+   */
+  public function deactivateMultiples(array $units): bool {
+    $params = array_map(function (UnitModel $unit) {
+      return [
+        "id" => $unit->id
+      ];
+    }, $units);
+
+    return $this->update(
+      "UPDATE planet_unit
+        SET active = FALSE
+        WHERE id = :id",
       $params
     );
   }

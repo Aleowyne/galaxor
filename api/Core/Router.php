@@ -26,17 +26,18 @@ class Router {
     }
 
     try {
-      // Construction du nom du contrôleur à partir de l'URL
+      // Construction du nom de la route à partir de l'URL
       if (preg_match("/\/galaxor\/api\/([a-z]+).*$/", $uri, $match)) {
-        $nameController = preg_replace("/s$/", "", preg_replace("/ies$/", "y", ucfirst($match[1])));
-        $controller = "\\App\\Controllers\\{$nameController}Controller";
+        $nameRoute = preg_replace("/s$/", "", preg_replace("/ies$/", "y", ucfirst($match[1])));
+        $route = "\\App\\Routes\\{$nameRoute}Route";
       } else {
         throw new Exceptions\NotFoundException("URL non trouvée");
       }
 
-      if (class_exists($controller) && property_exists($controller, "requestMethod")) {
-        $controller = new $controller($requestMethod, $params, $body);
-        $controller->processRequest($uri);
+      // Appel de la classe route
+      if (class_exists($route)) {
+        $route = new $route($requestMethod, $params, $body);
+        $route->processRequest($uri);
       } else {
         throw new Exceptions\NotFoundException("URL non trouvée");
       }

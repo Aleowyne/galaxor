@@ -99,7 +99,6 @@ class UserDao extends Database {
     $user = new UserModel();
     $user->id = $result[0] ?? 0;
     $user->name = $name;
-    $user->password = $password;
     $user->mailAddress = $mailAddress;
 
     return $user;

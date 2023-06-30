@@ -7,46 +7,13 @@ use App\Models\GalaxyModel;
 use App\Exceptions;
 
 class GalaxyController extends BaseController {
-  private $galaxyDao = null;
-  private $requestMethod = "";
-  private $params = [];
-  private $body = [];
+  private GalaxyDao $galaxyDao;
 
   /**
    * Constructeur
-   *
-   * @param string $requestMethod Méthode de la requête
-   * @param mixed[] $params Paramètres de la requête
-   * @param mixed[] $body Contenu de la requête
    */
-  public function __construct(string $requestMethod = "", array $params = [], array $body = []) {
+  public function __construct() {
     $this->galaxyDao = new GalaxyDao();
-    $this->requestMethod = $requestMethod;
-    $this->params = $params;
-    $this->body = $body;
-  }
-
-
-  /**
-   * Traitement de la requête
-   *
-   * @param string $uri URI
-   */
-  public function processRequest(string $uri): void {
-    // Endpoint /api/galaxies/:id
-    if (preg_match("/\/api\/galaxies\/\d*$/", $uri)) {
-      // Récupération d'une galaxie
-      if ($this->requestMethod === "GET") {
-        $galaxy = $this->getGalaxy();
-        $this->sendSuccessResponse($galaxy->toArray());
-      } else {
-        throw new Exceptions\MethodNotAllowedException();
-      }
-
-      return;
-    }
-
-    throw new Exceptions\NotFoundException("URL non valide");
   }
 
 
@@ -56,9 +23,7 @@ class GalaxyController extends BaseController {
    * @param integer $galaxyId Identifiant de la galaxie
    * @return GalaxyModel Données de la galaxie
    */
-  public function getGalaxy(int $galaxyId = 0): GalaxyModel {
-    $galaxyId = (int) ($this->params[0] ?? $galaxyId);
-
+  public function getGalaxy(int $galaxyId): GalaxyModel {
     $galaxy = $this->galaxyDao->findOne($galaxyId);
 
     if (!$galaxy->id) {
@@ -97,14 +62,12 @@ class GalaxyController extends BaseController {
    * @param integer $universeId Identifiant de l'univers
    * @return GalaxyModel[] Liste des galaxies
    */
-  public function createGalaxies(int $universeId = 0): array {
-    $universeId = (int) ($this->params[0] ?? $universeId);
-
+  public function createGalaxies(int $universeId): array {
     // Génération du nom des galaxies
     $names = $this->randomName(5);
 
     // Création des galaxies
-    $galaxies = $this->galaxyDao->insertMultiples($universeId, $names);
+    $galaxies = $this->galaxyDao->insertMultiplesByUniverse($universeId, $names);
 
     $solarSystemController = new SolarsystemController();
 

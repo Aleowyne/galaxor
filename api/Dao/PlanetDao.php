@@ -74,7 +74,7 @@ class PlanetDao extends Database {
    * @param string[] $names Nom des planètes
    * @return PlanetModel[] Liste des planètes
    */
-  public function insertMultiples(int $solarSystemId, array $names): array {
+  public function insertMultiplesBySolarSystem(int $solarSystemId, array $names): array {
     $params = array_map(function (string $name) use ($solarSystemId) {
       return [
         "name" => $name,

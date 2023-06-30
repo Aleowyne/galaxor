@@ -7,14 +7,14 @@ use App\Models\StructureModel;
 use App\Exceptions;
 
 class StructureController extends ItemController {
-  private $structureDao = null;
+  private StructureDao $structureDao;
 
   /**
    * Constructeur
    *
    * @param integer $planetId Identifiant de la planète
    */
-  public function __construct(int $planetId) {
+  public function __construct(int $planetId = 0) {
     parent::__construct($planetId);
     $this->structureDao = new StructureDao();
   }

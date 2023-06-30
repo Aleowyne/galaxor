@@ -9,14 +9,14 @@ use DateTime;
 use DateInterval;
 
 class UnitController extends ItemController {
-  private $unitDao = null;
+  private UnitDao $unitDao;
 
   /**
    * Constructeur
    *
    * @param integer $planetId Identifiant de la planète
    */
-  public function __construct(int $planetId) {
+  public function __construct(int $planetId = 0) {
     parent::__construct($planetId);
     $this->unitDao = new UnitDao();
   }
@@ -103,7 +103,7 @@ class UnitController extends ItemController {
     $unit->createInProgress = true;
 
     // Ajout de l'unité sur la planète
-    $unit->id = $this->unitDao->insertOne($this->planetId, $unit);
+    $unit->id = $this->unitDao->insertOneByPlanet($this->planetId, $unit);
 
     if (!$unit->id) {
       throw new Exceptions\InternalErrorException("Création de l'unité a échoué");
@@ -136,11 +136,29 @@ class UnitController extends ItemController {
     }
 
     // Mise à jour de l'unité
-    $isCreate = $this->unitDao->updateOne($this->planetId, $unit);
+    $isCreate = $this->unitDao->updateOneByPlanet($this->planetId, $unit);
 
     if (!$isCreate) {
       throw new Exceptions\InternalErrorException("Création de l'unité a échoué");
     }
     return $unit;
+  }
+
+
+  /**
+   * Désactivation des unités
+   *
+   * @param UnitModel[] $units Données des unités
+   */
+  public function disableUnits(array $units): void {
+    if (!$units) {
+      return;
+    }
+
+    $isUpdate = $this->unitDao->deactivateMultiples($units);
+
+    if (!$isUpdate) {
+      throw new Exceptions\InternalErrorException("Désactivation des unités a échoué");
+    }
   }
 }

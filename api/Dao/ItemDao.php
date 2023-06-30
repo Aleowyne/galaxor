@@ -143,7 +143,7 @@ class ItemDao extends Database {
    * @param ItemModel $item Données de l'item
    * @return boolean Flag indiquant si la mise à jour a réussi
    */
-  public function updateOne(int $planetId, ItemModel $item): bool {
+  public function updateOneByPlanet(int $planetId, ItemModel $item): bool {
     $params = [[
       "planet_id" => $planetId,
       "item_id" => $item->itemId,
@@ -151,6 +151,36 @@ class ItemDao extends Database {
       "upgrade_in_progress" => (int) $item->upgradeInProgress,
       "end_time_upgrade" => $item->endTimeUpgrade
     ]];
+
+    return $this->update(
+      "UPDATE planet_item
+        SET level = :level,
+            upgrade_in_progress = :upgrade_in_progress,
+            end_time_upgrade = :end_time_upgrade
+        WHERE planet_id = :planet_id
+          AND item_id = :item_id",
+      $params
+    );
+  }
+
+
+  /**
+   * Mise à jour d'items d'une planète dans la base
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @param ItemModel[] $items Données des items
+   * @return boolean Flag indiquant si la mise à jour a réussi
+   */
+  public function updateMultiplesByPlanet(int $planetId, array $items): bool {
+    $params = array_map(function (ItemModel $item) use ($planetId) {
+      return [
+        "planet_id" => $planetId,
+        "item_id" => $item->itemId,
+        "level" => $item->level,
+        "upgrade_in_progress" => (int) $item->upgradeInProgress,
+        "end_time_upgrade" => $item->endTimeUpgrade
+      ];
+    }, $items);
 
     return $this->update(
       "UPDATE planet_item

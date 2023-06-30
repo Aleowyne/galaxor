@@ -51,7 +51,7 @@ class SolarsystemDao extends Database {
    * @param string[] $names Nom des systèmes solaires
    * @return SolarsystemModel[] Liste des systèmes solaires
    */
-  public function insertMultiples(int $galaxyId, array $names): array {
+  public function insertMultiplesByGalaxy(int $galaxyId, array $names): array {
     $params = array_map(function (string $name) use ($galaxyId) {
       return [
         "name" => $name,
