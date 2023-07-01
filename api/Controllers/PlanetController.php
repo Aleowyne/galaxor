@@ -72,6 +72,18 @@ class PlanetController extends BaseController {
 
 
   /**
+   * Récupération du propriétaire d'une planète
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @return integer Identifiant du propriétaire
+   */
+  public function getOwnerPlanet(int $planetId): int {
+    $planet = $this->planetDao->findOne($planetId);
+    return $planet->userId;
+  }
+
+
+  /**
    * Récupération des combats d'une planète
    *
    * @param integer $planetId Identifiant de la planète

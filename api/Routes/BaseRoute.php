@@ -2,6 +2,8 @@
 
 namespace App\Routes;
 
+use App\Models\UserModel;
+
 class BaseRoute {
   /**
    * Affichage de la réponse de l'API
@@ -36,5 +38,16 @@ class BaseRoute {
    */
   protected function sendNoContentResponse(): void {
     $this->sendResponse("HTTP/1.1 204 No Content");
+  }
+
+  /**
+   * Contrôle des autorisations
+   *
+   * @param integer $userId Identifiant de l'utilisateur déterminé à partir de la requête
+   * @return boolean Flag indiquant si le contrôle est validé
+   */
+  protected function checkAuth(int $userId): bool {
+    $sessionUser = $_SESSION["user"] ?? new UserModel();
+    return $sessionUser->id !== 0 && $sessionUser->id === $userId;
   }
 }

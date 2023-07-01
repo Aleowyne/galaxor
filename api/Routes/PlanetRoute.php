@@ -178,8 +178,21 @@ class PlanetRoute extends BaseRoute {
 
     $userId = (int) $this->body["user_id"];
 
+    // Contrôle d'autorisation
+    if (!$this->checkAuth($userId)) {
+      throw new Exceptions\UnauthorizedException();
+    }
+
+    // Récupération du propriétaire de la planète
+    $ownerId = $this->planetController->getOwnerPlanet($planetId);
+
+    // Vérification du propriétaire de la planète
+    if ($ownerId !== 0) {
+      throw new Exceptions\NotFoundException("Planète déjà habitée");
+    }
+
     $this->planetController->assignUser($planetId, $userId);
-    $this->sendSuccessResponse();
+    $this->sendNoContentResponse();
   }
 
 
@@ -192,6 +205,14 @@ class PlanetRoute extends BaseRoute {
     // Contenu de la requête non valide
     if (!$this->checkBodyCreateFight()) {
       throw new Exceptions\UnprocessableException();
+    }
+
+    // Récupération du propriétaire de la planète
+    $ownerId = $this->planetController->getOwnerPlanet($attackPlanetId);
+
+    // Contrôle d'autorisation
+    if (!$this->checkAuth($ownerId)) {
+      throw new Exceptions\UnauthorizedException();
     }
 
     $defensePlanetId = (int) $this->body["defense_planet"];
@@ -207,6 +228,15 @@ class PlanetRoute extends BaseRoute {
    */
   private function requestUpdateResources(): void {
     $planetId = (int) ($this->params[0]) ?? 0;
+
+    // Récupération du propriétaire de la planète
+    $ownerId = $this->planetController->getOwnerPlanet($planetId);
+
+    // Contrôle d'autorisation
+    if (!$this->checkAuth($ownerId)) {
+      throw new Exceptions\UnauthorizedException();
+    }
+
     $planet = $this->planetController->updateResources($planetId);
     $this->sendSuccessResponse($planet->toArray());
   }
@@ -222,6 +252,14 @@ class PlanetRoute extends BaseRoute {
     // Contenu de la requête non valide
     if (!$this->checkBodyUpgradeItem()) {
       throw new Exceptions\UnprocessableException();
+    }
+
+    // Récupération du propriétaire de la planète
+    $ownerId = $this->planetController->getOwnerPlanet($planetId);
+
+    // Contrôle d'autorisation
+    if (!$this->checkAuth($ownerId)) {
+      throw new Exceptions\UnauthorizedException();
     }
 
     $action = $this->body["upgrade"];
@@ -244,6 +282,14 @@ class PlanetRoute extends BaseRoute {
       throw new Exceptions\UnprocessableException();
     }
 
+    // Récupération du propriétaire de la planète
+    $ownerId = $this->planetController->getOwnerPlanet($planetId);
+
+    // Contrôle d'autorisation
+    if (!$this->checkAuth($ownerId)) {
+      throw new Exceptions\UnauthorizedException();
+    }
+
     $action = $this->body["upgrade"];
 
     $planet = $this->planetController->upgradeResearch($planetId, $itemId, $action);
@@ -263,6 +309,14 @@ class PlanetRoute extends BaseRoute {
       throw new Exceptions\UnprocessableException();
     }
 
+    // Récupération du propriétaire de la planète
+    $ownerId = $this->planetController->getOwnerPlanet($planetId);
+
+    // Contrôle d'autorisation
+    if (!$this->checkAuth($ownerId)) {
+      throw new Exceptions\UnauthorizedException();
+    }
+
     $itemId = $this->body["item_id"];
 
     $planet = $this->planetController->startCreateUnit($planetId, $itemId);
@@ -275,8 +329,16 @@ class PlanetRoute extends BaseRoute {
    * Requête finalisation de création d'une unité sur une planète
    */
   private function requestFinishCreateUnit(): void {
-    $planetId = (int) ($this->params[0]) ?? 0;
+    $planetId = (int) ($this->params[0] ?? 0);
     $unitId = (int) ($this->params[1] ?? 0);
+
+    // Récupération du propriétaire de la planète
+    $ownerId = $this->planetController->getOwnerPlanet($planetId);
+
+    // Contrôle d'autorisation
+    if (!$this->checkAuth($ownerId)) {
+      throw new Exceptions\UnauthorizedException();
+    }
 
     $planet = $this->planetController->finishCreateUnit($planetId, $unitId);
 

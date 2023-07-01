@@ -149,8 +149,10 @@ class UserRoute extends BaseRoute {
 
       $user = $this->userController->login($mailAddress, $password);
 
-      $_SESSION = $user;
+      $_SESSION["user"] = $user;
     }
+
+    var_dump($_SESSION);
 
     $this->sendSuccessResponse($user->toArray());
   }
