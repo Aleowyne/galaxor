@@ -10,23 +10,29 @@ Galaxor est un jeu de stratégie en ligne dans lequel chaque participant tente d
 
 Ce jeu est réalisé en Javascript et PHP sans framework, et se base sur le projet étudiant ESIREM galactique.
 
-Le sujet est présenté dans le fichier `ESIREM_Galactique.pdf`.
+Le sujet est présenté dans le fichier PDF [ESIREM_Galactique](docs/ESIREM_Galactique.pdf).
 
 <br/>
 
 ## Configuration
 ### Client
-A venir
+*A venir*
 
 ### Serveur
-Dans le dossier `api`, créer le fichier `config.php` en copie du fichier `config.sample.php`, puis alimenter-le avec les paramètres de votre base de données.
-
 Installer la base de données grâce au fichier `database.sql`.
+
+Dans le dossier `api`, créer le fichier `config.php` en copie du fichier `config.sample.php`, puis alimenter-le avec les paramètres de votre base de données.
 
 <br/>
 
 ## Documentation
-A venir
+### Client
+*A venir*
+
+### Serveur
+Le schéma de la base de données, créé avec Mermaid, est disponible dans le fichier [database.md](docs/database.md) .
+
+*Documentation API à venir*
 
 <br/>
 
