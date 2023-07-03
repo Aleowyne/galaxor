@@ -152,8 +152,6 @@ class UserRoute extends BaseRoute {
       $_SESSION["user"] = $user;
     }
 
-    var_dump($_SESSION);
-
     $this->sendSuccessResponse($user->toArray());
   }
 
@@ -165,7 +163,7 @@ class UserRoute extends BaseRoute {
     $_SESSION = [];
     session_destroy();
 
-    $this->sendSuccessResponse();
+    $this->sendNoContentResponse();
   }
 
 
