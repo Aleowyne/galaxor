@@ -69,7 +69,7 @@ class UniverseController extends BaseController {
     $universe = $this->universeDao->insertOne($universe);
 
     if (!$universe->id) {
-      throw new Exceptions\InternalErrorException("Création de l'univers a échouée");
+      throw new Exceptions\InternalErrorException("Création de l'univers a échoué");
     }
 
     // Création des galaxies
