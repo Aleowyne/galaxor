@@ -30,9 +30,8 @@ Dans le dossier `api`, créer le fichier `config.php` en copie du fichier `confi
 *A venir*
 
 ### Serveur
-Le schéma de la base de données, créé avec Mermaid, est disponible dans le fichier [database.md](docs/database.md) .
-
-*Documentation API à venir*
+Le schéma de la base de données, créé avec Mermaid, est disponible dans le fichier [database.md](docs/database.md).  
+La documentation de l'API est disponible dans le [wiki](https://github.com/Aleowyne/galaxor/wiki).
 
 <br/>
 
