@@ -23,11 +23,11 @@ class UnitController extends ItemController {
 
 
   /**
-   * Récupération d'une unité d'une planète
+   * Récupération d'un type d'unité
    *
    * @param string $itemId Identifiant de l'item
    * @param string $itemType Type de l'item
-   * @return UnitModel Données de la structure
+   * @return UnitModel Données de l'unité
    */
   public function getItem(string $itemId, string $itemType = "UNIT"): UnitModel {
     // Récupération des informations de l'unité
@@ -36,7 +36,7 @@ class UnitController extends ItemController {
     $unit = new UnitModel();
 
     if (!$item->itemId) {
-      throw new Exceptions\InternalErrorException("Unité non trouvée");
+      throw new Exceptions\NotFoundException("Unité non trouvée");
     }
 
     foreach ($item as $key => $value) {
@@ -44,6 +44,33 @@ class UnitController extends ItemController {
     }
 
     return $unit;
+  }
+
+
+  /**
+   * Récupération des types d'unités
+   *
+   * @param string $itemType Type de l'item
+   * @return UnitModel[] Données des types d'unités
+   */
+  public function getItems(string $itemType = "UNIT"): array {
+    // Récupération des informations des unités
+    $items = parent::getItems($itemType);
+
+    /** @var UnitModel[] $units **/
+    $units = [];
+
+    foreach ($items as $item) {
+      $unit = new UnitModel();
+
+      foreach ($item as $key => $value) {
+        $unit->$key = $value;
+      }
+
+      $units[] = $unit;
+    }
+
+    return $units;
   }
 
 
@@ -58,7 +85,7 @@ class UnitController extends ItemController {
     $unit = $this->unitDao->findOne($unitId);
 
     if (!$unit->itemId) {
-      throw new Exceptions\InternalErrorException("Unité non trouvée");
+      throw new Exceptions\NotFoundException("Unité non trouvée");
     }
 
     // Evaluation des formules de l'item d'une planète
@@ -72,7 +99,7 @@ class UnitController extends ItemController {
    * Récupération des unités d'une planète
    *
    * @param string $itemType Type de l'item
-   * @return StructureModel[] Liste des unités
+   * @return UnitModel[] Liste des unités
    */
   public function getUnitsPlanet(): array {
     $units = $this->unitDao->findAllByPlanet($this->planetId);

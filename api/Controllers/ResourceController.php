@@ -11,8 +11,6 @@ use DateTime;
 class ResourceController extends BaseController {
   private ResourceDao $resourceDao;
   private int $planetId;
-  /** @var ResourceModel[] $resources **/
-  private array $resources;
 
   /**
    * Constructeur
@@ -28,54 +26,58 @@ class ResourceController extends BaseController {
   /**
    * Récupération des ressources d'une planète
    *
-   * @param ResourceModel[] Liste des ressources
+   * @return ResourceModel[] Liste des ressources
    */
   public function getResourcesPlanet(): array {
     // Récupération des ressources de la planète
-    $this->resources = $this->resourceDao->findAllByPlanet($this->planetId);
+    $resources = $this->resourceDao->findAllByPlanet($this->planetId);
 
     // Calcul de la production et de la nouvelle quantité des ressources
-    return $this->refreshResources();
+    return $this->refreshResources($resources);
   }
 
 
   /**
    * Mise à jour des ressources d'une planète
+   *
+   * @param ResourceModel[] $resources Liste des ressources
    */
-  public function updateResourcesPlanet(): void {
+  public function updateResourcesPlanet($resources): void {
     // Mise à jour des ressources sur la planète
-    $this->resourceDao->updateMultiplesByPlanet($this->planetId, $this->resources);
+    $this->resourceDao->updateMultiplesByPlanet($this->planetId, $resources);
   }
 
 
   /**
    * Calcul de la production et de la nouvelle quantité des ressources
    *
+   * @param ResourceModel[] $resources Liste des ressources
    * @param string $upgradeItemId Identifiant de l'item upgradé
    * @return ResourceModel[] Liste des ressources
    */
-  public function refreshResources(string $upgradeItemId = ""): array {
-    if ($this->resources) {
+  public function refreshResources(array $resources, string $upgradeItemId = ""): array {
+    if ($resources) {
       // Calcul de la production de ressources par les structures sur la planète
-      $this->calculateProduction($upgradeItemId);
+      $this->calculateProduction($resources, $upgradeItemId);
 
       // Calcul de la nouvelle quantité des ressources sur la planète
-      $this->calculateNewQuantity();
+      $this->calculateNewQuantity($resources);
     }
 
-    return $this->resources;
+    return $resources;
   }
 
 
   /**
    * Contrôle de la disponibilité des ressources sur la planète pour upgrader un item
    *
+   * @param ResourceModel[] $resources Liste des ressources
    * @param ItemModel $item Données de l'item
    * @return boolean Flag indiquant s'il y a suffisamment de ressources
    */
-  public function checkAvailabilityResources(ItemModel $item): bool {
+  public function checkAvailabilityResources(array $resources, ItemModel $item): bool {
     foreach ($item->costs as $cost) {
-      $resource = $this->searchResource($cost->resourceId);
+      $resource = $this->searchResource($resources, $cost->resourceId);
 
       // Si pas de quantité suffisante
       if ($resource->quantity < $cost->quantity) {
@@ -96,84 +98,89 @@ class ResourceController extends BaseController {
   /**
    * Ajout des coûts de construction d'une liste d'unités dans les ressources de la planète
    *
+   * @param ResourceModel[] $resources Liste des ressources
    * @param array $units Données des unités
    * @return ResourceModel[] Liste des ressources
    */
-  public function addCostsUnitsToResources(array $units): array {
+  public function addCostsUnitsToResources(array $resources, array $units): array {
     $currentDate = new DateTime();
 
     foreach ($units as $unit) {
       foreach ($unit->costs as $cost) {
-        $resource = $this->searchResource($cost->resourceId);
+        $resource = $this->searchResource($resources, $cost->resourceId);
         $resource->quantity += $cost->quantity;
         $resource->lastTimeCalc = $currentDate->format(self::FORMAT_DATE);
       }
     }
 
     // Mise à jour des ressources sur la planète
-    $this->updateResourcesPlanet();
+    $this->updateResourcesPlanet($resources);
 
-    return $this->resources;
+    return $resources;
   }
 
 
   /**
    * Ajout de ressources sur la planète
    *
+   * @param ResourceModel[] $resources Liste des ressources
    * @param ResourceModel[] $addResources Ressources à déduire
    * @return ResourceModel[] Liste des ressources
    */
-  public function addResources(array $addResources): array {
+  public function addResources(array $resources, array $addResources): array {
     $currentDate = new DateTime();
 
     foreach ($addResources as $addResource) {
-      $resource = $this->searchResource($addResource->id);
+      $resource = $this->searchResource($resources, $addResource->id);
       $resource->quantity = $resource->quantity + $addResource->quantity;
       $resource->lastTimeCalc = $currentDate->format(self::FORMAT_DATE);
     }
 
     // Mise à jour des ressources
-    $this->updateResourcesPlanet();
+    $this->updateResourcesPlanet($resources);
 
-    return $this->resources;
+    return $resources;
   }
 
 
   /**
    * Déduction de ressources sur la planète
    *
+   * @param ResourceModel[] $resources Liste des ressources
    * @param ResourceModel[] $subtractResources Ressources à déduire
    * @return ResourceModel[] Liste des ressources
    */
-  public function subtractResources(array $subtractResources): array {
+  public function subtractResources(array $resources, array $subtractResources): array {
     $currentDate = new DateTime();
 
     foreach ($subtractResources as $subtractResource) {
-      $resource = $this->searchResource($subtractResource->id);
+      $resource = $this->searchResource($resources, $subtractResource->id);
       $resource->quantity = $resource->quantity - $subtractResource->quantity;
       $resource->lastTimeCalc = $currentDate->format(self::FORMAT_DATE);
     }
 
     // Mise à jour des ressources
-    $this->updateResourcesPlanet();
+    $this->updateResourcesPlanet($resources);
 
-    return $this->resources;
+    return $resources;
   }
 
 
   /**
    * Calcul de la production de ressources par les structures sur une planète
    *
+   * @param ResourceModel[] $resources Liste des ressources
    * @param string $upgradeItemId Identifiant de l'item upgradé
+   * @return ResourceModel[] Liste des ressources
    */
-  private function calculateProduction(string $upgradeItemId = ""): void {
+  private function calculateProduction(array $resources, string $upgradeItemId = ""): array {
     $structureController = new StructureController($this->planetId);
     $structures = $structureController->getItemsPlanet();
 
     foreach ($structures as $structure) {
       /** @var StructureModel $structure **/
       foreach ($structure->formulasProd as $production) {
-        $resource = $this->searchResource($production->resourceId);
+        $resource = $this->searchResource($resources, $production->resourceId);
 
         // Pas de mise à jour de la ressource "Energie", sauf si une structure augmentant l'énergie a été upgradée
         if (($production->resourceId === 3 && $structure->itemId !== $upgradeItemId)
@@ -191,15 +198,20 @@ class ResourceController extends BaseController {
         $resource->production = (int) round(eval($formula));
       }
     }
+
+    return $resources;
   }
 
 
   /**
    * Calcul de la nouvelle quantité des ressources sur la planète
+   *
+   * @param ResourceModel[] $resources Liste des ressources
+   * @return ResourceModel[] Liste des ressources
    */
-  private function calculateNewQuantity(): void {
+  private function calculateNewQuantity(array $resources): array {
     // Calcul de la nouvelle quantité des ressources
-    foreach ($this->resources as &$resource) {
+    foreach ($resources as &$resource) {
       $currentDate = new DateTime();
 
       // Seules les ressources différentes de l'énergie sont dépendantes du temps
@@ -220,17 +232,20 @@ class ResourceController extends BaseController {
         }
       }
     }
+
+    return $resources;
   }
 
 
   /**
    * Récupération de la ressource de la planète
    *
+   * @param ResourceModel[] $resources Liste des ressources
    * @param integer $resourceId Identifiant de la ressource
    * @return ResourceModel Données de la ressource
    */
-  private function searchResource(int $resourceId): ResourceModel {
-    $resource = array_filter($this->resources, function (ResourceModel $resource) use ($resourceId) {
+  private function searchResource(array $resources, int $resourceId): ResourceModel {
+    $resource = array_filter($resources, function (ResourceModel $resource) use ($resourceId) {
       return $resource->id === $resourceId;
     });
 

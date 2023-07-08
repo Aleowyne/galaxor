@@ -115,19 +115,35 @@ class ItemController extends BaseController {
 
 
   /**
-   * Récupération d'un item
+   * Récupération d'un item en fonction d'un id et d'un type d'item
    *
    * @param string $itemId Identifiant de l'item
    * @param string $itemType Type de l'item
    * @return ItemModel Données de l'item
    */
   protected function getItem(string $itemId, string $itemType): ItemModel {
-    $item = $this->itemDao->findOne($itemId, $itemType);
+    $item = $this->itemDao->findOneByType($itemId, $itemType);
 
-    // Evaluation des formules de l'item d'une planète
+    // Evaluation des formules de l'item
     $items = $this->evaluateFormulas([$item]);
 
     return $items[0];
+  }
+
+
+  /**
+   * Récupération des items en fonction d'un type d'item
+   *
+   * @param string $itemType Type de l'item
+   * @return ItemModel[] Données des items
+   */
+  protected function getItems(string $itemType): array {
+    $items = $this->itemDao->findAllByType($itemType);
+
+    // Evaluation des formules des items
+    $items = $this->evaluateFormulas($items);
+
+    return $items;
   }
 
 

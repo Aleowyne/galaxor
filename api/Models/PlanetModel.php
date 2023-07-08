@@ -42,68 +42,11 @@ class PlanetModel {
    * @return mixed[] Données de la planète
    */
   public function toArray(): array {
-    $arrayPlanet = [
+    return [
       "id" => $this->id,
       "name" => $this->name,
       "position" => $this->position,
       "user_id" => $this->userId
     ];
-
-    // Ressources
-    if ($this->resources) {
-      $resourcesList = [
-        "resources" => array_map(function (ResourceModel $resource) {
-          return $resource->toArray();
-        }, $this->resources)
-      ];
-
-      $arrayPlanet = array_merge($arrayPlanet, $resourcesList);
-    }
-
-    // Structures
-    if ($this->structures) {
-      $structuresList = [
-        "structures" => array_map(function (StructureModel $structure) {
-          return $structure->toArray();
-        }, $this->structures)
-      ];
-
-      $arrayPlanet = array_merge($arrayPlanet, $structuresList);
-    }
-
-    // Recherches
-    if ($this->researches) {
-      $researchesList = [
-        "researches" => array_map(function (ResearchModel $research) {
-          return $research->toArray();
-        }, $this->researches)
-      ];
-
-      $arrayPlanet = array_merge($arrayPlanet, $researchesList);
-    }
-
-    // Unités
-    if ($this->units) {
-      $unitsList = [
-        "units" => array_map(function (UnitModel $unit) {
-          return $unit->toArray();
-        }, $this->units)
-      ];
-
-      $arrayPlanet = array_merge($arrayPlanet, $unitsList);
-    }
-
-    // Combats
-    if ($this->fights) {
-      $fightsList = [
-        "fights" => array_map(function (FightModel $fight) {
-          return $fight->toArray();
-        }, $this->fights)
-      ];
-
-      $arrayPlanet = array_merge($arrayPlanet, $fightsList);
-    }
-
-    return $arrayPlanet;
   }
 }

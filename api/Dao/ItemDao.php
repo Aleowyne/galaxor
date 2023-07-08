@@ -15,7 +15,7 @@ class ItemDao extends Database {
    * @param string $itemType Type de l'item
    * @return ItemModel Données de l'item
    */
-  public function findOne(string $itemId, string $itemType = "%"): ItemModel {
+  public function findOneByType(string $itemId, string $itemType = "%"): ItemModel {
     $params = [[
       "item_id" => $itemId,
       "item_type" => $itemType
@@ -32,6 +32,32 @@ class ItemDao extends Database {
 
     return new ItemModel($result[0] ?? []);
   }
+
+
+  /**
+   * Sélection des items en fonction d'un type d'item en base
+   *
+   * @param string $itemType Type de l'item
+   * @return ItemModel[] Données des items
+   */
+  public function findAllByType(string $itemType = "%"): array {
+    $params = [[
+      "item_type" => $itemType
+    ]];
+
+    $result = $this->select(
+      "SELECT id AS item_id, name AS item_name, type AS item_type, build_time,
+              attack_point, defense_point, freight_capacity
+        FROM item
+        WHERE type LIKE :item_type",
+      $params
+    );
+
+    return array_map(function (array $res) {
+      return new ItemModel($res);
+    }, $result);
+  }
+
 
   /**
    * Sélection des items d'une planète en base, en fonction d'un type d'item

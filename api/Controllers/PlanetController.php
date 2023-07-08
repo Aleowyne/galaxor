@@ -4,6 +4,10 @@ namespace App\Controllers;
 
 use App\Dao\PlanetDao;
 use App\Models\PlanetModel;
+use App\Models\StructureModel;
+use App\Models\ResearchModel;
+use App\Models\UnitModel;
+use App\Models\FightModel;
 use App\Exceptions;
 
 class PlanetController extends BaseController {
@@ -29,22 +33,6 @@ class PlanetController extends BaseController {
     if (!$planet->id) {
       throw new Exceptions\NotFoundException("Planète non trouvée");
     }
-
-    // Récupération des structures
-    $structureController = new StructureController($planetId);
-    $planet->structures = $structureController->getItemsPlanet();
-
-    // Récupération des recherches
-    $researchController = new ResearchController($planetId);
-    $planet->researches = $researchController->getItemsPlanet();
-
-    // Récupération des ressources
-    $resourceController = new ResourceController($planetId);
-    $planet->resources = $resourceController->getResourcesPlanet();
-
-    // Récupération des unités
-    $unitController = new UnitController($planetId);
-    $planet->units = $unitController->getUnitsPlanet();
 
     return $planet;
   }
@@ -72,14 +60,106 @@ class PlanetController extends BaseController {
 
 
   /**
-   * Récupération du propriétaire d'une planète
+   * Récupération de toutes les infrastructures d'une planète
    *
    * @param integer $planetId Identifiant de la planète
-   * @return integer Identifiant du propriétaire
+   * @return PlanetModel Données de la planète
    */
-  public function getOwnerPlanet(int $planetId): int {
-    $planet = $this->planetDao->findOne($planetId);
-    return $planet->userId;
+  public function getAllInfraPlanet(int $planetId): PlanetModel {
+    $planet = $this->getPlanet($planetId);
+
+    // Récupération des structures
+    $structureController = new StructureController($planet->id);
+    $planet->structures = $structureController->getItemsPlanet();
+
+    // Récupération des recherches
+    $researchController = new ResearchController($planet->id);
+    $planet->researches = $researchController->getItemsPlanet();
+
+    // Récupération des ressources
+    $resourceController = new ResourceController($planet->id);
+    $planet->resources = $resourceController->getResourcesPlanet();
+
+    // Récupération des unités
+    $unitController = new UnitController($planet->id);
+    $planet->units = $unitController->getUnitsPlanet();
+
+    return $planet;
+  }
+
+
+  /**
+   * Récupération des ressources d'une planète
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @return ResourceModel[] Ressources de la planète
+   */
+  public function getResources(int $planetId): array {
+    $planet = $this->getPlanet($planetId);
+
+    // Récupération des ressources
+    $resourceController = new ResourceController($planet->id);
+    return $resourceController->getResourcesPlanet();
+  }
+
+
+  /**
+   * Récupération des structures d'une planète
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @return StructureModel[] Structures de la planète
+   */
+  public function getStructures(int $planetId): array {
+    $planet = $this->getPlanet($planetId);
+
+    // Récupération des structures
+    $structureController = new StructureController($planet->id);
+    return $structureController->getItemsPlanet();
+  }
+
+
+  /**
+   * Récupération des recherches d'une planète
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @return ResearchModel[] Recherches de la planète
+   */
+  public function getResearches(int $planetId): array {
+    $planet = $this->getPlanet($planetId);
+
+    // Récupération des recherches
+    $researchController = new ResearchController($planet->id);
+    return $researchController->getItemsPlanet();
+  }
+
+
+  /**
+   * Récupération des unités d'une planète
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @return UnitModel[] Unités de la planète
+   */
+  public function getUnits(int $planetId): array {
+    $planet = $this->getPlanet($planetId);
+
+    // Récupération des recherches
+    $unitController = new UnitController($planet->id);
+    return $unitController->getUnitsPlanet();
+  }
+
+
+  /**
+   * Récupération des unités d'une planète
+   *
+   * @param integer $planetId Identifiant de la planète
+   * @return UnitModel[] Unités de la planète
+   */
+  public function getUnitTypes(int $planetId): array {
+    $planet = $this->getPlanet($planetId);
+
+    // Récupération des recherches
+    $unitController = new UnitController($planet->id);
+    return $unitController->getItems();
   }
 
 
@@ -87,20 +167,14 @@ class PlanetController extends BaseController {
    * Récupération des combats d'une planète
    *
    * @param integer $planetId Identifiant de la planète
-   * @return PlanetModel Données de la planète
+   * @return FightModel[] Liste des combats de la planète
    */
-  public function getFights(int $planetId): PlanetModel {
-    $planet = $this->planetDao->findOne($planetId);
-
-    if (!$planet->id) {
-      throw new Exceptions\NotFoundException("Planète non trouvée");
-    }
+  public function getFights(int $planetId): array {
+    $planet = $this->getPlanet($planetId);
 
     // Récupération des combats
     $fightController = new FightController();
-    $planet->fights = $fightController->getFightsPlanet($planet->id);
-
-    return $planet;
+    return $fightController->getFightsPlanet($planet->id);
   }
 
 
@@ -125,18 +199,13 @@ class PlanetController extends BaseController {
    * @param integer $userId Identifiant de l'utilisateur
    */
   public function assignUser(int $planetId, int $userId): void {
-    // Vérification de l'existence de la planète
-    $planet = $this->planetDao->findOne($planetId);
-
-    if (!$planet->id) {
-      throw new Exceptions\NotFoundException("Planète non trouvée");
-    }
+    $planet = $this->getPlanet($planetId);
 
     // Vérification de l'existence de l'utilisateur
     $userController = new UserController();
     $user = $userController->getUser($userId);
 
-    $isUpdatePlanet = $this->planetDao->updateOne($planetId, $user->id);
+    $isUpdatePlanet = $this->planetDao->updateOne($planet->id, $user->id);
 
     if (!$isUpdatePlanet) {
       throw new Exceptions\InternalErrorException("Assignation de l'utilisateur a échoué");
@@ -150,14 +219,14 @@ class PlanetController extends BaseController {
    * @param integer $attackPlanetId Identifiant de la planète attaquante
    * @param integer $defensePlanetId Identifiant de la planète attaquée
    * @param integer[] $attackUnitIds Identifiants des unités de la planète attaquante
-   * @return PlanetModel Données de la planète
+   * @return FightModel Données du combat
    */
-  public function createFight(int $attackPlanetId, int $defensePlanetId, array $attackUnitIds): PlanetModel {
+  public function createFight(int $attackPlanetId, int $defensePlanetId, array $attackUnitIds): FightModel {
     // Récupération des données de la planète attaquante
-    $attackPlanet = $this->getPlanet($attackPlanetId);
+    $attackPlanet = $this->getAllInfraPlanet($attackPlanetId);
 
     // Récupération des données de la planète attaquée
-    $defensePlanet = $this->getPlanet($defensePlanetId);
+    $defensePlanet = $this->getAllInfraPlanet($defensePlanetId);
 
     // Si la planète n'appartient à personne
     if ($defensePlanet->userId === 0) {
@@ -173,10 +242,7 @@ class PlanetController extends BaseController {
     $fightController = new FightController($attackPlanet, $defensePlanet);
     $fightId = $fightController->createFightPlanet($attackUnitIds);
 
-    $attackPlanet = $this->getPlanet($attackPlanetId);
-    $attackPlanet->fights[] = $fightController->getFight($fightId);
-
-    return $attackPlanet;
+    return $fightController->getFight($fightId);
   }
 
 
@@ -184,22 +250,17 @@ class PlanetController extends BaseController {
    * Mise à jour des ressources d'une planète
    *
    * @param integer $planetId Identifiant de la planète
-   * @return PlanetModel Données de la planète
+   * @return ResourceModel[] Ressources de la planète
    */
-  public function updateResources(int $planetId): PlanetModel {
-    // Vérification de l'existence de la planète
-    $planet = $this->planetDao->findOne($planetId);
-
-    if (!$planet->id) {
-      throw new Exceptions\InternalErrorException("Planète non trouvée");
-    }
+  public function updateResources(int $planetId): array {
+    $planet = $this->getPlanet($planetId);
 
     // Mise à jour de la quantité des ressources
-    $resourceController = new ResourceController($planetId);
+    $resourceController = new ResourceController($planet->id);
     $planet->resources = $resourceController->getResourcesPlanet();
-    $resourceController->updateResourcesPlanet();
+    $resourceController->updateResourcesPlanet($planet->resources);
 
-    return $planet;
+    return $planet->resources;
   }
 
 
@@ -209,9 +270,9 @@ class PlanetController extends BaseController {
    * @param integer $planetId Identifiant de la planète
    * @param string $itemId Identifiant de la structure
    * @param string $action Action sur la structure (start ou finish)
-   * @return PlanetModel Données de la planète
+   * @return StructureModel Données de la structure
    */
-  public function upgradeStructure(int $planetId, string $itemId, string $action): PlanetModel {
+  public function upgradeStructure(int $planetId, string $itemId, string $action): StructureModel {
     $structureController = new StructureController($planetId);
 
     if ($action === "start") {
@@ -230,9 +291,9 @@ class PlanetController extends BaseController {
    * @param integer $planetId Identifiant de la planète
    * @param string $itemId Identifiant de la recherche
    * @param string $action Action sur la recherche (start ou finish)
-   * @return PlanetModel Données de la planète
+   * @return ResearchModel Données de la recherche
    */
-  public function upgradeResearch(int $planetId, string $itemId, string $action): PlanetModel {
+  public function upgradeResearch(int $planetId, string $itemId, string $action): ResearchModel {
     $researchController = new ResearchController($planetId);
 
     if ($action === "start") {
@@ -250,38 +311,29 @@ class PlanetController extends BaseController {
    *
    * @param integer $planetId Identifiant de la planète
    * @param string $itemId Identifiant de l'item
-   * @return PlanetModel Données de la planète
+   * @return UnitModel Données de l'unité
    */
-  public function startCreateUnit(int $planetId, string $itemId): PlanetModel {
-    $planet = $this->planetDao->findOne($planetId);
-
-    if (!$planet->id) {
-      throw new Exceptions\InternalErrorException("Planète non trouvée");
-    }
+  public function startCreateUnit(int $planetId, string $itemId): UnitModel {
+    $planet = $this->getPlanet($planetId);
 
     // Récupération de l'item
-    $unitController = new UnitController($planetId);
+    $unitController = new UnitController($planet->id);
     $unit = $unitController->getItem($itemId);
 
     // Récupération des ressources
-    $resourceController = new ResourceController($planetId);
+    $resourceController = new ResourceController($planet->id);
     $planet->resources = $resourceController->getResourcesPlanet();
 
     // Contrôle de la disponibilité des ressources pour créer l'unité
-    if (!$resourceController->checkAvailabilityResources($unit)) {
+    if (!$resourceController->checkAvailabilityResources($planet->resources, $unit)) {
       throw new Exceptions\InternalErrorException("Ressources insuffisantes");
     }
 
     // Mise à jour des ressources sur la planète
-    $resourceController->updateResourcesPlanet();
+    $resourceController->updateResourcesPlanet($planet->resources);
 
     // Création de l'unité
-    $unit = $unitController->startCreateUnitPlanet($unit);
-
-    $planet->units = [$unit];
-    $planet->resources = $resourceController->refreshResources();
-
-    return $planet;
+    return $unitController->startCreateUnitPlanet($unit);
   }
 
 
@@ -290,25 +342,17 @@ class PlanetController extends BaseController {
    *
    * @param integer $planetId Identifiant de la planète
    * @param integer $unitId Identifiant de l'unité
-   * @return PlanetModel Données de la planète
+   * @return UnitModel Données de l'unité
    */
-  public function finishCreateUnit(int $planetId, int $unitId): PlanetModel {
-    $planet = $this->planetDao->findOne($planetId);
-
-    if (!$planet->id) {
-      throw new Exceptions\InternalErrorException("Planète non trouvée");
-    }
+  public function finishCreateUnit(int $planetId, int $unitId): UnitModel {
+    $planet = $this->getPlanet($planetId);
 
     // Récupération de l'unité
-    $unitController = new UnitController($planetId);
+    $unitController = new UnitController($planet->id);
     $unit = $unitController->getUnitPlanet($unitId);
 
     // Finalisation de la création de l'unité
-    $unit = $unitController->finishCreateUnitPlanet($unit);
-
-    $planet->units = [$unit];
-
-    return $planet;
+    return $unitController->finishCreateUnitPlanet($unit);
   }
 
 
@@ -318,50 +362,30 @@ class PlanetController extends BaseController {
    * @param StructureController|ResearchController $itemController Contrôleur des items
    * @param integer $planetId Identifiant de la planète
    * @param string $itemId Identifiant de l'item
-   * @return PlanetModel Données de la planète
+   * @return StructureModel|ResearchModel Données de l'item
    */
-  private function startUpgradeItem(StructureController|ResearchController $itemController, int $planetId, string $itemId): PlanetModel {
-    $planet = $this->planetDao->findOne($planetId);
-
-    if (!$planet->id) {
-      throw new Exceptions\InternalErrorException("Planète non trouvée");
-    }
+  private function startUpgradeItem(StructureController|ResearchController $itemController, int $planetId, string $itemId): StructureModel|ResearchModel {
+    $planet = $this->getAllInfraPlanet($planetId);
 
     // Récupération de l'item
     $item = $itemController->getItemPlanet($itemId);
 
     // Récupération des ressources
-    $resourceController = new ResourceController($planetId);
-    $planet->resources = $resourceController->getResourcesPlanet();
+    $resourceController = new ResourceController($planet->id);
 
     // Contrôle de la disponibilité des ressources pour upgrade
-    if (!$resourceController->checkAvailabilityResources($item)) {
+    if (!$resourceController->checkAvailabilityResources($planet->resources, $item)) {
       throw new Exceptions\InternalErrorException("Ressources insuffisantes");
     }
 
     // Mise à jour des ressources sur la planète
-    $resourceController->updateResourcesPlanet();
+    $resourceController->updateResourcesPlanet($planet->resources);
 
     // Mise à jour de l'item
     $itemController->startUpgradeItem($item);
 
     // Récupération des données mises à jour sur l'item
-    $item = $itemController->getItemPlanet($itemId);
-
-    switch ($item->type) {
-      case "STRUCTURE":
-        $planet->structures = [$item];
-        break;
-      case "RESEARCH":
-        $planet->researches = [$item];
-        break;
-      default:
-        break;
-    }
-
-    $planet->resources = $resourceController->refreshResources();
-
-    return $planet;
+    return $itemController->getItemPlanet($itemId);
   }
 
 
@@ -371,21 +395,16 @@ class PlanetController extends BaseController {
    * @param StructureController|ResearchController $itemController Contrôleur des items
    * @param integer $planetId Identifiant de la planète
    * @param string $itemId Identifiant de l'item
-   * @return PlanetModel Données de la planète
+   * @return StructureModel|ResearchModel Données de l'item
    */
-  private function finishUpgradeItem(StructureController|ResearchController $itemController, int $planetId, string $itemId): PlanetModel {
-    $planet = $this->planetDao->findOne($planetId);
-
-    if (!$planet->id) {
-      throw new Exceptions\InternalErrorException("Planète non trouvée");
-    }
+  private function finishUpgradeItem(StructureController|ResearchController $itemController, int $planetId, string $itemId): StructureModel|ResearchModel {
+    $planet = $this->getAllInfraPlanet($planetId);
 
     // Récupération de l'item
     $item = $itemController->getItemPlanet($itemId);
 
     // Mise à jour des ressources sur la planète avant upgrade
-    $resourceController = new ResourceController($planetId);
-    $planet->resources = $resourceController->getResourcesPlanet();
+    $resourceController = new ResourceController($planet->id);
 
     // Mise à jour de l'item
     $itemController->finishUpgradeItem($item);
@@ -393,23 +412,10 @@ class PlanetController extends BaseController {
     // Récupération des données mises à jour sur l'item
     $item = $itemController->getItemPlanet($itemId);
 
-    switch ($item->type) {
-      case "STRUCTURE":
-        $planet->structures = [$item];
-        break;
-      case "RESEARCH":
-        $planet->researches = [$item];
-        break;
-      default:
-        break;
-    }
-
     // Mise à jour des ressources si l'item est lié à la ressource "Energie"
-    $resourceController->refreshResources($itemId);
-    $resourceController->updateResourcesPlanet();
+    $resourceController->refreshResources($planet->resources, $itemId);
+    $resourceController->updateResourcesPlanet($planet->resources);
 
-    $planet->resources = $resourceController->refreshResources();
-
-    return $planet;
+    return $item;
   }
 }

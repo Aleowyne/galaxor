@@ -105,7 +105,7 @@ class FightDao extends Database {
     $result = $this->select(
       "SELECT fi.fight_id, fi.item_id, i.name AS item_name, COUNT(i.name) AS quantity
         FROM fight_item AS fi
-        INNER JOIN item AS i
+        LEFT JOIN item AS i
           ON fi.item_id = i.id
         WHERE fi.fight_id = :id
         GROUP BY fi.fight_id, fi.item_id, i.name

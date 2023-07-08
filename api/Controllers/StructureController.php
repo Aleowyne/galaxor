@@ -33,7 +33,7 @@ class StructureController extends ItemController {
     $structure = new StructureModel();
 
     if (!$item->itemId) {
-      throw new Exceptions\InternalErrorException("Structure non trouvée");
+      throw new Exceptions\NotFoundException("Structure non trouvée");
     }
 
     foreach ($item as $key => $value) {

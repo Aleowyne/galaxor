@@ -272,9 +272,9 @@ class FightController extends BaseController {
     $resourceController = new ResourceController($this->defensePlanet->id);
 
     // Récupération et mise à jour des ressources sur la planète avant le calcul des récompenses
-    $resourceController->getResourcesPlanet();
-    $resourceController->updateResourcesPlanet();
-    $resourceController->addCostsUnitsToResources($disableUnits);
+    $resources = $resourceController->getResourcesPlanet();
+    $resourceController->updateResourcesPlanet($resources);
+    $resourceController->addCostsUnitsToResources($resources, $disableUnits);
   }
 
 
@@ -305,10 +305,10 @@ class FightController extends BaseController {
         $freightCapacity += $freightUnit->freightCapacity;
       }
 
-      // Mise à jour de la planète attaquée
+      // Mise à jour des ressources de la planète attaquée
       $resourceController = new ResourceController($this->defensePlanet->id);
       $resourcesLosingPlanet = $resourceController->getResourcesPlanet();
-      $resourceController->updateResourcesPlanet();
+      $resourceController->updateResourcesPlanet($resourcesLosingPlanet);
 
       // Calcul du nombre de ressources gagnées
       foreach ($resourcesLosingPlanet as $resourceLosingPlanet) {
@@ -323,14 +323,14 @@ class FightController extends BaseController {
         $freightCapacity -= $resource->quantity;
       }
 
-      $resourceController->subtractResources($this->fight->acquiredResources);
+      $resourceController->subtractResources($resourcesLosingPlanet, $this->fight->acquiredResources);
 
 
-      // Mise à jour de la planète attaquante
+      // Mise à jour des ressources de la planète attaquante
       $resourceController = new ResourceController($this->attackPlanet->id);
-      $resourceController->getResourcesPlanet();
-      $resourceController->updateResourcesPlanet();
-      $resourceController->addResources($this->fight->acquiredResources);
+      $resourcesWiningPlanet = $resourceController->getResourcesPlanet();
+      $resourceController->updateResourcesPlanet($resourcesWiningPlanet);
+      $resourceController->addResources($resourcesWiningPlanet, $this->fight->acquiredResources);
     }
   }
 }

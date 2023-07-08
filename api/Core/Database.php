@@ -11,6 +11,7 @@ class Database {
   private $connection = null;
   private $lastIds = [];
   private $nbRows = 0;
+  private $results = [];
 
   public function __construct() {
     $host = DB_HOST;
@@ -41,10 +42,9 @@ class Database {
   public function select(string $query = "", array $params = []): array {
     try {
       $stmt = $this->executeStatement($query, $params);
-      $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
       $stmt->closeCursor();
 
-      return empty($result) ? [] : $result;
+      return empty($this->results) ? [] : $this->results;
     } catch (Exception $e) {
       throw new Exceptions\InternalErrorException($e);
     }
@@ -100,6 +100,7 @@ class Database {
   private function executeStatement(string $query = "", array $params = []): PDOStatement {
     $this->lastIds = [];
     $this->nbRows = 0;
+    $this->results = [];
 
     $stmt = $this->connection->prepare($query);
 
@@ -110,9 +111,9 @@ class Database {
     // Pas de paramètre
     if (!$params) {
       $stmt->execute();
-
       $this->lastIds[] = (int) $this->connection->lastInsertId();
       $this->nbRows += $stmt->rowCount();
+      $this->results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
       return $stmt;
     }
@@ -120,9 +121,9 @@ class Database {
     // Au moins un paramètre
     foreach ($params as $param) {
       $stmt->execute($param);
-
       $this->lastIds[] = (int) $this->connection->lastInsertId();
       $this->nbRows += $stmt->rowCount();
+      $this->results = array_merge($this->results, $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
     return $stmt;
