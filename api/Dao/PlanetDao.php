@@ -75,13 +75,17 @@ class PlanetDao extends Database {
    * @return PlanetModel[] Liste des planètes
    */
   public function insertMultiplesBySolarSystem(int $solarSystemId, array $names): array {
-    $params = array_map(function (string $name) use ($solarSystemId) {
-      return [
+    $positions = range(1, 10);
+    shuffle($positions);
+    $params = [];
+
+    foreach ($names as $index => $name) {
+      $params[] = [
         "name" => $name,
         "solar_system_id" => $solarSystemId,
-        "position" => rand(1, 10)
+        "position" => $positions[$index]
       ];
-    }, $names);
+    }
 
     $result = $this->insert(
       "INSERT INTO planet (solar_system_id, name, position)
