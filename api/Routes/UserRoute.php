@@ -135,10 +135,10 @@ class UserRoute extends BaseRoute {
    * Requête connexion d'un utilisateur
    */
   private function requestLogin(): void {
-    // Utilisateur déjà connecté
-    if (isset($_SESSION["id"]) && $_SESSION["id"]) {
-      $user = new UserModel($_SESSION);
-    } else {
+    $user = $_SESSION["user"] ?? new UserModel();
+
+    // Si l'utilisateur n'est pas connecté
+    if ($user->id === 0) {
       // Données de l'utilisateur non valide
       if (!$this->checkBodyLogin()) {
         throw new Exceptions\UnprocessableException();
