@@ -56,7 +56,7 @@ class UserController extends BaseController {
     // Utilisateur déjà enregistré avec l'adresse mail ou l'utilisateur
     if (
       $this->userDao->findOneByAddress($mailAddress)->id
-      || $this->userDao->findOneByName($password)->id
+      || $this->userDao->findOneByName($name)->id
     ) {
       throw new Exceptions\UnprocessableException();
     }
