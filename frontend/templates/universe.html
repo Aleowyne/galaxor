@@ -1,3 +1,27 @@
 <template>
-  <div class="universe"></div>
+  <div class="universe">
+    <div class="universe-galaxy">
+      <label for="galaxy-list">Galaxie : </label>
+      <select id="galaxy-list" class="universe-select select" required="required">
+      </select>
+    </div>
+
+    <div class="universe-solarsystem">
+      <label for="solarsystem-list">Système solaire : </label>
+      <select id="solarsystem-list" class="universe-select select" required="required">
+      </select>
+    </div>
+
+    <table class="universe-table" aria-describedby="Liste des planètes">
+      <thead>
+        <tr>
+          <th class="universe-table-th">Position</th>
+          <th class="universe-table-th">Nom de la planète</th>
+          <th class="universe-table-th">Propriétaire</th>
+        </tr>
+      </thead>
+      <tbody id="planet-list">
+      </tbody>
+    </table>
+  </div>
 </template>

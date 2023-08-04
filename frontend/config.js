@@ -8,7 +8,7 @@ export default class Config {
   /**
    * Récupération du chemin vers le template HTML pour la page demandée
    * @param {string} path Chemin d'accès de la page
-   * @returns Chemin vers le template
+   * @returns {string} Chemin vers le template
    */
   static getTemplate(path) {
     return this.routes[path] || this.routes['404'];

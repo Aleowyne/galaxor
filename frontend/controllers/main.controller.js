@@ -1,9 +1,10 @@
-import AlertComponent from './alert.component.js';
-import UserController from '../controllers/user.controller.js';
+import BaseController from './base.controller.js';
+import UserModel from '../models/user.model.js';
 
-export default class MainComponent {
+export default class MainController extends BaseController {
   constructor() {
-    this.alertComponent = new AlertComponent();
+    super();
+    this.addEventLinkLogout();
   }
 
   /**
@@ -20,9 +21,6 @@ export default class MainComponent {
     else {
       headerNav.style.display = 'flex';
     }
-
-    // Déconnexion du joueur
-    this.addEventLinkLogout();
   }
 
   /**
@@ -31,13 +29,16 @@ export default class MainComponent {
   addEventLinkLogout() {
     const logoutLink = document.getElementById('logout-link');
 
-    logoutLink.addEventListener('click', (event) => {
+    logoutLink.addEventListener('click', async (event) => {
       event.preventDefault();
 
-      UserController.logout()
-        .then(() => {
-          document.location.href = '';
-        });
+      try {
+        await this.requestPost('/galaxor/api/users/logout');
+        document.location.href = '';
+      }
+      catch (error) {
+        this.alertController.displayErrorAlert(error);
+      }
     });
   }
 
@@ -49,7 +50,8 @@ export default class MainComponent {
     const path = window.location.hash.substring(1);
 
     try {
-      const user = await UserController.login();
+      const jsonResponse = await this.requestPost('/galaxor/api/users/login');
+      const user = new UserModel(jsonResponse);
 
       const loginEvent = new CustomEvent('login', { detail: user });
       document.body.dispatchEvent(loginEvent);

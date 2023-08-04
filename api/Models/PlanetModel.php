@@ -7,6 +7,7 @@ class PlanetModel {
   public string $name;
   public int $position;
   public int $userId;
+  public string $username;
   /** @var ResourceModel[] $resources **/
   public array $resources;
   /** @var StructureModel[] $structures **/
@@ -28,6 +29,7 @@ class PlanetModel {
     $this->name = $planet["name"] ?? "";
     $this->position = $planet["position"] ?? 0;
     $this->userId = $planet["user_id"] ?? 0;
+    $this->username = $planet["username"] ?? "";
     $this->resources = [];
     $this->structures = [];
     $this->researches = [];
@@ -46,7 +48,8 @@ class PlanetModel {
       "id" => $this->id,
       "name" => $this->name,
       "position" => $this->position,
-      "user_id" => $this->userId
+      "user_id" => $this->userId,
+      "username" => $this->username
     ];
   }
 }

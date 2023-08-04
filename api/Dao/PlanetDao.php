@@ -13,9 +13,11 @@ class PlanetDao extends Database {
    */
   public function findAll(): array {
     $result = $this->select(
-      "SELECT id, name, position, user_id
-        FROM planet
-        ORDER BY id ASC"
+      "SELECT p.id, p.name, p.position, p.user_id, u.name as username
+        FROM planet AS p
+        LEFT JOIN user AS u
+          ON p.user_id = u.id
+        ORDER BY p.id ASC"
     );
 
     return array_map(function (array $res) {
@@ -34,9 +36,11 @@ class PlanetDao extends Database {
     $params = [["solar_system_id" => $solarSystemId]];
 
     $result = $this->select(
-      "SELECT id, name, position, user_id
-        FROM planet
-        WHERE solar_system_id = :solar_system_id",
+      "SELECT p.id, p.name, p.position, p.user_id, u.name as username
+        FROM planet AS p
+        LEFT JOIN user AS u
+          ON p.user_id = u.id
+        WHERE p.solar_system_id = :solar_system_id",
       $params
     );
 
@@ -56,9 +60,11 @@ class PlanetDao extends Database {
     $params = [["id" => $id]];
 
     $result = $this->select(
-      "SELECT DISTINCT p.id, p.name, p.position, p.user_id, ps.size
+      "SELECT DISTINCT p.id, p.name, p.position, p.user_id, u.name as username, ps.size
         FROM planet AS p
         NATURAL JOIN planet_size AS ps
+        LEFT JOIN user AS u
+          ON p.user_id = u.id
         WHERE p.id = :id",
       $params
     );

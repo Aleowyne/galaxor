@@ -1,7 +1,7 @@
-import BaseComponent from './base.component.js';
+import BaseController from './base.controller.js';
 import ErrorView from '../views/error.view.js';
 
-export default class ErrorComponent extends BaseComponent {
+export default class ErrorController extends BaseController {
   constructor() {
     super();
     this.view = new ErrorView();
@@ -10,6 +10,7 @@ export default class ErrorComponent extends BaseComponent {
   /**
    * Construction de la vue
    * @param {string} path Chemin de la page
+   * @returns {Promise<Node>} Noeud HTML de la page
    */
   async setupView(path) {
     super.setupView(path);

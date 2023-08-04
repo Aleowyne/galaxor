@@ -1,20 +1,20 @@
-import MainComponent from './components/main.component.js';
-import HomeComponent from './components/home.component.js';
-import UniverseComponent from './components/universe.component.js';
-import ErrorComponent from './components/error.component.js';
+import MainController from './controllers/main.controller.js';
+import HomeController from './controllers/home.controller.js';
+import UniverseController from './controllers/universe.controller.js';
+import ErrorController from './controllers/error.controller.js';
 
 class App {
   constructor() {
-    this.mainComponent = new MainComponent();
-    this.errorComponent = new ErrorComponent();
-    this.homeComponent = new HomeComponent();
-    this.universeComponent = new UniverseComponent();
+    this.mainController = new MainController();
+    this.errorController = new ErrorController();
+    this.homeController = new HomeController();
+    this.universeController = new UniverseController();
     this.content = document.querySelector('.main-content');
 
-    this.components = {
-      404: this.errorComponent,
-      '': this.homeComponent,
-      universe: this.universeComponent,
+    this.controllers = {
+      404: this.errorController,
+      '': this.homeController,
+      universe: this.universeController,
     };
 
     window.addEventListener('hashchange', () => {
@@ -26,26 +26,26 @@ class App {
    * Routeur
    */
   async router() {
-    // Détermination du composant qui sera appelé
-    const path = await this.mainComponent.determinePath();
+    // Détermination du chemin
+    const path = await this.mainController.determinePath();
 
     if (path === 'redirect') {
       return;
     }
 
-    // Initialisation de la vue du composant principal (header, footer, navigation ...)
-    this.mainComponent.setupView(path);
+    // Initialisation de la vue du contrôleur principal (header, footer, navigation ...)
+    this.mainController.setupView(path);
 
-    // Détermination du componsant
-    const component = this.components[path] || this.components['404'];
+    // Détermination du contrôleur
+    const controller = this.controllers[path] || this.controllers['404'];
 
-    // Construction de la vue du composant
+    // Construction de la vue du contrôleur
     this.content.innerHTML = '';
-    this.content.append(await component.setupView(path));
+    this.content.append(await controller.setupView(path));
 
     // Traitement sur la page
-    if (typeof component.process === 'function') {
-      component.process();
+    if (typeof controller.process === 'function') {
+      controller.process();
     }
   }
 }

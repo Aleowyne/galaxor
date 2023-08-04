@@ -6,7 +6,7 @@ export default class HomeView {
   /**
    * Initialisation de la vue
    * @param {UniverseModel[]} universes Liste des univers
-   * @returns Le template modifié de la page
+   * @returns {Promise<Node>} Noeud HTML de la page
    */
   async init(universes) {
     const templateElement = document.createElement('div');
@@ -14,10 +14,10 @@ export default class HomeView {
     const response = await fetch(this.template);
     templateElement.innerHTML = await response.text();
 
-    const template = templateElement.querySelector('template').content.cloneNode(true);
+    const node = templateElement.querySelector('template').content.cloneNode(true);
 
     // Alimentation de la liste des univers
-    const universeSelect = template.getElementById('login-universe');
+    const universeSelect = node.getElementById('login-universe');
 
     universes.forEach((universe) => {
       const universeOption = document.createElement('option');
@@ -27,7 +27,7 @@ export default class HomeView {
       universeSelect.add(universeOption, null);
     });
 
-    return template;
+    return node;
   }
 
   /**

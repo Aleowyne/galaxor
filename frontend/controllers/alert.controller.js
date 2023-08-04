@@ -1,4 +1,4 @@
-export default class AlertComponent {
+export default class AlertController {
   constructor() {
     this.alert = document.getElementById('app-alert');
   }
@@ -33,7 +33,7 @@ export default class AlertComponent {
    * @param {string} message Message
    */
   displayErrorAlert(message) {
-    this.displayAlert('error', message);
+    this.displayAlert('error', `Erreur : ${message}`);
   }
 
   /**

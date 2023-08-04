@@ -1,9 +1,9 @@
-import BaseComponent from './base.component.js';
-import UserController from '../controllers/user.controller.js';
-import UniverseController from '../controllers/universe.controller.js';
+import BaseController from './base.controller.js';
+import UserModel from '../models/user.model.js';
+import UniverseModel from '../models/universe.model.js';
 import HomeView from '../views/home.view.js';
 
-export default class HomeComponent extends BaseComponent {
+export default class HomeController extends BaseController {
   constructor() {
     super();
     this.view = new HomeView();
@@ -13,6 +13,7 @@ export default class HomeComponent extends BaseComponent {
   /**
    * Construction de la vue
    * @param {string} path Chemin de la page
+   * @returns {Promise<Node>} Noeud HTML de la page
    */
   async setupView(path) {
     super.setupView(path);
@@ -20,10 +21,11 @@ export default class HomeComponent extends BaseComponent {
 
     try {
       // Récupération des univers
-      this.universes = await UniverseController.getUniverses();
+      const jsonResponse = await this.requestGet('/galaxor/api/universes');
+      this.universes = jsonResponse.universes.map((universe) => new UniverseModel(universe));
     }
     catch (error) {
-      this.alertController.displayErrorAlert(`Erreur à la récupération des univers : ${error} `);
+      this.alertController.displayErrorAlert(error);
     }
 
     return this.view.init(this.universes);
@@ -58,8 +60,15 @@ export default class HomeComponent extends BaseComponent {
         const password = document.getElementById('login-password').value;
         const universeId = document.getElementById('login-universe').value;
 
+        const bodyRequest = {
+          mail_address: mailAddress,
+          password,
+        };
+
         try {
-          const user = await UserController.login(mailAddress, password);
+          // Connexion de l'utilisateur
+          const jsonResponse = await this.requestPost('/galaxor/api/users/login', bodyRequest);
+          const user = new UserModel(jsonResponse);
 
           const loginEvent = new CustomEvent('login', { detail: user });
           document.body.dispatchEvent(loginEvent);
@@ -70,7 +79,7 @@ export default class HomeComponent extends BaseComponent {
           document.location.href = '#universe';
         }
         catch (error) {
-          this.alertController.displayErrorAlert(`Erreur à la connexion : ${error} `);
+          this.alertController.displayErrorAlert(error);
         }
       }
     });
@@ -91,12 +100,20 @@ export default class HomeComponent extends BaseComponent {
         const name = document.getElementById('signup-name').value;
         const password = document.getElementById('signup-password').value;
 
+        const bodyRequest = {
+          mail_address: mailAddress,
+          name,
+          password,
+        };
+
         try {
-          await UserController.signup(mailAddress, name, password);
+          // Inscription de l'utilisateur
+          await this.requestPost('/galaxor/api/users/register', bodyRequest);
+
           this.alertController.displaySuccessAlert('Inscription réussie. Connectez-vous pour jouer.');
         }
         catch (error) {
-          this.alertController.displayErrorAlert(`Erreur à l'inscription : ${error} `);
+          this.alertController.displayErrorAlert(error);
         }
       }
     });
@@ -114,7 +131,10 @@ export default class HomeComponent extends BaseComponent {
       try {
         this.loader.style.display = 'flex';
 
-        const universe = await UniverseController.createUniverse();
+        // Création de l'univers
+        const jsonResponse = await this.requestPost('/galaxor/api/universes');
+        const universe = new UniverseModel(jsonResponse);
+
         this.view.addUniverse(universe);
 
         this.loader.style.display = 'none';
@@ -122,7 +142,7 @@ export default class HomeComponent extends BaseComponent {
         this.alertController.displaySuccessAlert(`Univers ${universe.name} créé`);
       }
       catch (error) {
-        this.alertController.displayErrorAlert(`Erreur à la création de l'univers : ${error} `);
+        this.alertController.displayErrorAlert(error);
       }
     });
   }

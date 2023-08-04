@@ -4,7 +4,7 @@ export default class GalaxyModel {
   constructor(galaxy) {
     this.id = 0;
     this.name = '';
-    this.solarsystems = [];
+    this.solarSystems = [];
 
     this.fromArray(galaxy);
   }
@@ -15,7 +15,7 @@ export default class GalaxyModel {
       this.name = galaxy.name ?? this.name;
 
       if (galaxy.solar_systems) {
-        this.solarsystems = galaxy.solar_systems.map((solarsystem) => new SolarSystemModel(solarsystem));
+        this.solarSystems = galaxy.solar_systems.map((solarSystems) => new SolarSystemModel(solarSystems));
       }
     }
   }

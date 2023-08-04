@@ -1,69 +1,198 @@
+import BaseController from './base.controller.js';
 import UniverseModel from '../models/universe.model.js';
+import UniverseView from '../views/universe.view.js';
 
-export default class UniverseController {
-  /**
-   * Récupération des univers
-   * @returns Liste des univers
-   */
-  static async getUniverses() {
-    const response = await fetch('/galaxor/api/universes', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    });
-
-    const json = await response.json();
-
-    if (response.status !== 200) {
-      throw json.error;
-    }
-
-    return json.universes.map((item) => new UniverseModel(item));
+export default class UniverseComponent extends BaseController {
+  constructor() {
+    super();
+    this.view = new UniverseView();
+    this.universe = new UniverseModel();
+    this.selectedGalaxyId = 0;
+    this.selectedSolarSystemId = 0;
+    this.selectedPlanetId = 0;
+    this.selectedPosition = 0;
   }
 
   /**
-   * Récupération des données d'un univers
+   * Construction de la vue
+   * @param {string} path Chemin de la page
+   * @returns {Promise<Node>} Noeud HTML de la page
+   */
+  async setupView(path) {
+    await super.setupView(path);
+    this.view = new UniverseView(this.template);
+
+    const universeId = localStorage.getItem('universeId');
+
+    // Récupération des données de l'univers
+    this.universe = await this.getUniverse(universeId);
+
+    if (this.universe.id !== 0) {
+      this.selectedGalaxyId = this.universe.galaxies[0].id;
+      this.selectedSolarSystemId = this.universe.galaxies[0].solarSystems[0].id;
+
+      return this.view.init(this.universe);
+    }
+
+    return document.createElement('div');
+  }
+
+  /**
+   * Traitement
+   */
+  process() {
+    // Sélection d'une galaxie : mise à jour de la liste des systèmes solaires
+    this.addEventSelectGalaxy();
+
+    // Sélection d'un système solaire : mise à jour de la liste des planètes
+    this.addEventSelectSolarSystem();
+
+    // Colonisation d'une planète
+    this.addEventSettlePlanet();
+
+    // Gestion de la boite de dialogue
+    this.addEventDialog();
+  }
+
+  /**
+   * Récupération des données de l'univers
    * @param {number} universeId Identifiant de l'univers
-   * @returns Données de l'univers
+   * @returns Les données de l'univers
    */
-  static async getUniverse(universeId) {
-    const response = await fetch(`/galaxor/api/universes/${universeId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    });
-
-    const json = await response.json();
-
-    if (response.status !== 200) {
-      throw json.error;
+  async getUniverse(universeId) {
+    try {
+      // Récupération des données de l'univers
+      const jsonResponse = await this.requestGet(`/galaxor/api/universes/${universeId}`);
+      return new UniverseModel(jsonResponse);
     }
-
-    return new UniverseModel(json);
+    catch (error) {
+      this.alertController.displayErrorAlert(error);
+      return new UniverseModel();
+    }
   }
 
   /**
-   * Création d'un univers
+   * Gestion de l'évènement "sélection d'une galaxie"
    */
-  static async createUniverse() {
-    const response = await fetch('/galaxor/api/universes', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+  addEventSelectGalaxy() {
+    const galaxySelect = document.getElementById('galaxy-list');
+
+    galaxySelect.addEventListener('change', async (event) => {
+      event.preventDefault();
+
+      // Récupération des systèmes solaires à partir de la galaxie choisie
+      this.selectedGalaxyId = Number(event.target.value);
+      const galaxy = this.universe.galaxies.find((galaxy) => galaxy.id === this.selectedGalaxyId);
+
+      if (galaxy) {
+        this.view.setSolarSystems(galaxy.solarSystems);
+        const [solarSystem] = galaxy.solarSystems;
+
+        if (solarSystem) {
+          this.view.setPlanets(solarSystem.planets);
+        }
+      }
+
+      // Colonisation d'une planète
+      this.addEventSettlePlanet();
+    });
+  }
+
+  /**
+   * Gestion de l'évènement "sélection d'un système solaire"
+   */
+  addEventSelectSolarSystem() {
+    const solarSystemSelect = document.getElementById('solarsystem-list');
+
+    solarSystemSelect.addEventListener('change', async (event) => {
+      event.preventDefault();
+
+      // Récupération de l'univers mis à jour
+      this.universe = await this.getUniverse(this.universe.id);
+
+      const galaxy = this.universe.galaxies.find((galaxy) => galaxy.id === this.selectedGalaxyId);
+
+      // Récupération des planètes à partir du système solaire choisi
+      this.selectedSolarSystemId = Number(event.target.value);
+      const solarSystem = galaxy.solarSystems.find((solarSystem) => solarSystem.id === this.selectedSolarSystemId);
+
+      if (solarSystem) {
+        this.view.setPlanets(solarSystem.planets);
+      }
+
+      // Colonisation d'une planète
+      this.addEventSettlePlanet();
+    });
+  }
+
+  /**
+   * Gestion de l'évènement "colonisation d'une planète"
+   */
+  addEventSettlePlanet() {
+    const planetCells = document.querySelectorAll('.universe-table-td');
+
+    planetCells.forEach((planetCell) => {
+      planetCell.addEventListener('click', async (event) => {
+        event.preventDefault();
+
+        // Récupération de l'univers mis à jour
+        this.universe = await this.getUniverse(this.universe.id);
+
+        const ownerId = Number(event.target.getAttribute('data-ownerid'));
+        this.selectedPlanetId = Number(event.target.getAttribute('data-planetid'));
+        this.selectedPosition = Number(event.target.getAttribute('data-position'));
+
+        // Planète n'appartenant à personne
+        if (ownerId === 0 && this.selectedPlanetId !== 0) {
+          this.displayDialog('S\'installer sur cette planète ?');
+        }
+        // Planète de l'utilisateur
+        else if (ownerId === this.user.id) {
+          // TODO Affichage de la page de la planète
+        }
+      });
+    });
+  }
+
+  /**
+   * Gestion des évènements sur la boite de dialogue
+   */
+  addEventDialog() {
+    const dialog = document.getElementById('app-dialog');
+    const confirmDialog = document.getElementById('app-dialog-confirm');
+    const cancelDialog = document.getElementById('app-dialog-cancel');
+
+    cancelDialog.addEventListener('click', async (event) => {
+      event.preventDefault();
+      dialog.style.display = 'none';
+
+      // Récupération de l'univers mis à jour
+      this.universe = await this.getUniverse(this.universe.id);
     });
 
-    const json = await response.json();
+    confirmDialog.addEventListener('click', async (event) => {
+      event.preventDefault();
 
-    if (response.status !== 200) {
-      throw json.error;
-    }
+      const userCell = document.getElementById('planet-list').rows[this.selectedPosition - 1].cells[2];
 
-    return new UniverseModel(json);
+      const bodyRequest = {
+        user_id: this.user.id,
+      };
+
+      try {
+        // Assignation d'un utilisateur à la planète
+        await this.requestPut(`/galaxor/api/planets/${this.selectedPlanetId}`, bodyRequest);
+        userCell.innerHTML = this.user.name;
+        this.alertController.displaySuccessAlert('Planète conquise');
+      }
+      catch (error) {
+        this.alertController.displayErrorAlert(error);
+      }
+
+      dialog.style.display = 'none';
+
+      // Récupération de l'univers mis à jour
+      this.universe = await this.getUniverse(this.universe.id);
+    });
   }
 }

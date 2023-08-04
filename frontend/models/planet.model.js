@@ -4,6 +4,7 @@ export default class PlanetModel {
     this.name = '';
     this.position = 0;
     this.ownerId = 0;
+    this.ownerName = '';
 
     this.fromArray(planet);
   }
@@ -13,7 +14,8 @@ export default class PlanetModel {
       this.id = planet.id ?? this.id;
       this.name = planet.name ?? this.name;
       this.position = planet.position ?? this.position;
-      this.ownerId = planet.ownerId ?? this.ownerId;
+      this.ownerId = planet.user_id ?? this.ownerId;
+      this.ownerName = planet.username ?? this.ownerName;
     }
   }
 }
