@@ -1,13 +1,9 @@
-import BaseController from './base.controller.js';
-import PlanetModel from '../models/planet.model.js';
+import UnitController from './unit.controller.js';
 import StructureModel from '../models/structure.model.js';
-import StructureView from '../views/structure.view.js';
 
-export default class StructureController extends BaseController {
+export default class ResearchController extends UnitController {
   constructor() {
-    super();
-    this.view = new StructureView();
-    this.planet = new PlanetModel();
+    super('structure');
     this.structures = [];
   }
 
@@ -18,16 +14,10 @@ export default class StructureController extends BaseController {
    */
   async setupView(path) {
     await super.setupView(path);
-    this.view = new StructureView(this.template);
-
-    const planetId = localStorage.getItem('planetId');
-
-    // Récupération des données de la planète
-    this.planet = await this.getPlanet(planetId);
 
     if (this.planet.id !== 0 && this.planet.ownerId === this.user.id) {
       // Récupération des structures de la planète
-      this.structures = await this.getStructuresPlanet(planetId);
+      this.structures = await this.getStructuresPlanet(this.planet.id);
       return this.view.init(this.structures);
     }
 
@@ -40,23 +30,6 @@ export default class StructureController extends BaseController {
   process() {
     // Gestion de la construction
     this.addEventBuild();
-  }
-
-  /**
-   * Récupération des données de la planète
-   * @param {number} planetId Identifiant de la planète
-   * @returns Les données de la planète
-   */
-  async getPlanet(planetId) {
-    try {
-      // Récupération des données de la planète
-      const jsonResponse = await this.requestGet(`/galaxor/api/planets/${planetId}`);
-      return new PlanetModel(jsonResponse);
-    }
-    catch (error) {
-      this.alertController.displayErrorAlert(error);
-      return new PlanetModel();
-    }
   }
 
   /**
@@ -94,7 +67,7 @@ export default class StructureController extends BaseController {
           if (structure.upgradeInProgress && structure.endTimeUpgrade <= currentDate) {
             const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/structures/${structure.id}/finish`);
             structure = new StructureModel(jsonResponse);
-            this.view.refreshStructureFinishBuild(structure, index);
+            this.view.refreshItemFinishBuild(structure, index);
           }
 
           // Lancement de la construction

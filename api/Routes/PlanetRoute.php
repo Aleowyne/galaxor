@@ -275,7 +275,7 @@ class PlanetRoute extends BaseRoute {
     $researches = $this->planetController->getResearches($planetId);
 
     $arrayResearches = [
-      "reasearches" => array_map(function (ResearchModel $research) {
+      "researches" => array_map(function (ResearchModel $research) {
         return $research->toArray();
       }, $researches)
     ];

@@ -4,6 +4,7 @@ export default class Config {
     error: 'frontend/templates/error.html',
     universe: 'frontend/templates/universe.html',
     structure: 'frontend/templates/structure.html',
+    research: 'frontend/templates/research.html',
   };
 
   /**
