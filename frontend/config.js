@@ -1,8 +1,9 @@
 export default class Config {
   static routes = {
-    404: 'frontend/templates/404.html',
     '': 'frontend/templates/home.html',
+    error: 'frontend/templates/error.html',
     universe: 'frontend/templates/universe.html',
+    structure: 'frontend/templates/structure.html',
   };
 
   /**
@@ -11,6 +12,6 @@ export default class Config {
    * @returns {string} Chemin vers le template
    */
   static getTemplate(path) {
-    return this.routes[path] || this.routes['404'];
+    return this.routes[path] || this.routes.error;
   }
 }

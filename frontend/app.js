@@ -1,6 +1,7 @@
 import MainController from './controllers/main.controller.js';
 import HomeController from './controllers/home.controller.js';
 import UniverseController from './controllers/universe.controller.js';
+import StructureController from './controllers/structure.controller.js';
 import ErrorController from './controllers/error.controller.js';
 
 class App {
@@ -9,12 +10,14 @@ class App {
     this.errorController = new ErrorController();
     this.homeController = new HomeController();
     this.universeController = new UniverseController();
+    this.structureController = new StructureController();
     this.content = document.querySelector('.main-content');
 
     this.controllers = {
-      404: this.errorController,
       '': this.homeController,
+      error: this.errorController,
       universe: this.universeController,
+      structure: this.structureController,
     };
 
     window.addEventListener('hashchange', () => {
@@ -37,7 +40,7 @@ class App {
     this.mainController.setupView(path);
 
     // Détermination du contrôleur
-    const controller = this.controllers[path] || this.controllers['404'];
+    const controller = this.controllers[path] || this.controllers.error;
 
     // Construction de la vue du contrôleur
     this.content.innerHTML = '';

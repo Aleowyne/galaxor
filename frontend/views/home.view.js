@@ -1,23 +1,16 @@
-export default class HomeView {
-  constructor(template) {
-    this.template = template;
-  }
+import BaseView from './base.view.js';
 
+export default class HomeView extends BaseView {
   /**
    * Initialisation de la vue
    * @param {UniverseModel[]} universes Liste des univers
    * @returns {Promise<Node>} Noeud HTML de la page
    */
   async init(universes) {
-    const templateElement = document.createElement('div');
-
-    const response = await fetch(this.template);
-    templateElement.innerHTML = await response.text();
-
-    const node = templateElement.querySelector('template').content.cloneNode(true);
+    const template = await super.init();
 
     // Alimentation de la liste des univers
-    const universeSelect = node.getElementById('login-universe');
+    const universeSelect = template.getElementById('login-universe');
 
     universes.forEach((universe) => {
       const universeOption = document.createElement('option');
@@ -27,7 +20,7 @@ export default class HomeView {
       universeSelect.add(universeOption, null);
     });
 
-    return node;
+    return template;
   }
 
   /**

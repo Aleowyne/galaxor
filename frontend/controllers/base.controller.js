@@ -1,10 +1,10 @@
 import Config from '../config.js';
-import AlertComponent from './alert.controller.js';
+import AlertController from './alert.controller.js';
 import UserModel from '../models/user.model.js';
 
 export default class BaseController {
   constructor() {
-    this.alertController = new AlertComponent();
+    this.alertController = new AlertController();
     this.user = new UserModel();
     this.template = '';
     this.loader = document.querySelector('.loader');

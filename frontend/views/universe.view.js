@@ -1,33 +1,26 @@
-export default class UniverseView {
-  constructor(template) {
-    this.template = template;
-  }
+import BaseView from './base.view.js';
 
+export default class UniverseView extends BaseView {
   /**
    * Initialisation de la page
    * @param {UniverseModel} universe Données de l'univers
    * @returns {Promise<Node>} Noeud HTML de la page
    */
   async init(universe) {
-    const templateElement = document.createElement('div');
-
-    const response = await fetch(this.template);
-    templateElement.innerHTML = await response.text();
-
-    const node = templateElement.querySelector('template').content.cloneNode(true);
+    const template = await super.init();
 
     // Liste des galaxies
-    this.setGalaxies(universe.galaxies, node);
+    this.setGalaxies(universe.galaxies, template);
 
     // Liste des systèmes solaires
     const { solarSystems } = universe.galaxies[0];
-    this.setSolarSystems(solarSystems, node);
+    this.setSolarSystems(solarSystems, template);
 
     // Liste des planètes
     const { planets } = solarSystems[0];
-    this.setPlanets(planets, node);
+    this.setPlanets(planets, template);
 
-    return node;
+    return template;
   }
 
   /**

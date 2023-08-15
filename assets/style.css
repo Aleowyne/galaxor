@@ -39,6 +39,7 @@ body {
   border: solid 1px rgba(255, 255, 255, .2);
 }
 
+/* Boutons */
 .btn {
   padding: 7px 20px;
   color: var(--color-content-light);
@@ -47,6 +48,15 @@ body {
   border: 0px;
   border-radius: 20px;
   cursor: pointer;
+}
+
+.btn-finish {
+  background-color: var(--color-success);
+}
+
+.btn:disabled {
+  background-color: #696969;
+  cursor: auto;
 }
 
 /* Message d'alerte */
@@ -216,6 +226,68 @@ body {
 
 .universe-table-td {
   cursor: pointer;
+}
+
+/* Page "Structure" */
+.structure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: auto;
+}
+
+.structure-table {
+  width: 50%;
+}
+
+.structure-table-row {
+  display: grid;
+  grid-template-columns: 1fr 3fr 1fr;
+  border-bottom: solid 1px rgba(255, 255, 255, .2);
+  margin-top: 20px;
+}
+
+.structure-image {
+  grid-area: 1 / 1 / 2 / 2;
+  width: 80px;
+  padding: 10px;
+}
+
+.structure-txt {
+  grid-area: 1 / 2 / 2 / 3;
+  padding: 10px;
+}
+
+.structure-name {
+  font-weight: bold;
+}
+
+.structure-action {
+  grid-area: 1 / 3 / 2 / 4;
+  padding: 10px;
+}
+
+.structure-build-btn {
+  width: 150px;
+  height: 50px;
+}
+
+.structure-prerequisite-banner {
+  grid-area: 2 / 2 / 3 / 4;
+  padding: 10px;
+}
+
+.structure-prerequisite-row {
+  padding: 10px;
+  border: solid 1px rgba(255, 255, 255, .2);
+}
+
+.structure-icon {
+  vertical-align: text-bottom;
+}
+
+.structure-prerequisite-name {
+  font-weight: bold;
 }
 
 /* Page 404 */

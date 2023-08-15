@@ -2,7 +2,7 @@ import BaseController from './base.controller.js';
 import UniverseModel from '../models/universe.model.js';
 import UniverseView from '../views/universe.view.js';
 
-export default class UniverseComponent extends BaseController {
+export default class UniverseController extends BaseController {
   constructor() {
     super();
     this.view = new UniverseView();
@@ -148,7 +148,8 @@ export default class UniverseComponent extends BaseController {
         }
         // Planète de l'utilisateur
         else if (ownerId === this.user.id) {
-          // TODO Affichage de la page de la planète
+          localStorage.setItem('planetId', this.selectedPlanetId);
+          document.location.href = '#structure';
         }
       });
     });
