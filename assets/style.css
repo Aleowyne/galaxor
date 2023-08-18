@@ -228,77 +228,65 @@ body {
   cursor: pointer;
 }
 
-/* Pages "Structure", "Recherches" */
-.structure,
-.research {
+/* Pages "Structure", "Recherche", "Unité" */
+.item {
   display: flex;
   flex-direction: column;
   align-items: center;
   width: auto;
 }
 
-.structure-table,
-.research-table {
+.item-table {
   width: 50%;
 }
 
-.structure-table-row,
-.research-table-row {
+.item-table-row {
   display: grid;
   grid-template-columns: 1fr 3fr 1fr;
   border-bottom: solid 1px rgba(255, 255, 255, .2);
   margin-top: 20px;
 }
 
-.structure-image,
-.research-image {
+.item-image {
   grid-area: 1 / 1 / 2 / 2;
   width: 80px;
   padding: 10px;
 }
 
-.structure-txt,
-.research-txt {
+.item-txt {
   grid-area: 1 / 2 / 2 / 3;
   padding: 10px;
 }
 
-.structure-name,
-.research-name {
+.item-name {
   font-weight: bold;
 }
 
-.structure-action,
-.research-action {
+.item-action {
   grid-area: 1 / 3 / 2 / 4;
   padding: 10px;
 }
 
-.structure-build-btn,
-.research-build-btn {
+.item-build-btn {
   width: 150px;
   height: 50px;
 }
 
-.structure-prerequisite-banner,
-.research-prerequisite-banner {
+.item-prerequisite-banner {
   grid-area: 2 / 2 / 3 / 4;
   padding: 10px;
 }
 
-.structure-prerequisite-row,
-.research-prerequisite-row {
+.item-prerequisite-row {
   padding: 10px;
   border: solid 1px rgba(255, 255, 255, .2);
 }
 
-.structure-icon,
-.research-icon {
+.item-icon {
   vertical-align: text-bottom;
 }
 
-.structure-prerequisite-name,
-.research-prerequisite-name {
+.item-prerequisite-name {
   font-weight: bold;
 }
 

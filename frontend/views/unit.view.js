@@ -1,196 +1,101 @@
-import BaseView from './base.view.js';
+import ItemView from './item.view.js';
 
-export default class UnitView extends BaseView {
-  constructor(template, itemType) {
-    super(template);
-    this.itemType = itemType;
-  }
-
+export default class UnitView extends ItemView {
   /**
-   * Initialisation de la page
-   * @param {StructureModel[]|ResearchModel[]} items Structures/recherches de la planète
-   * @returns {Promise<Node>} Noeud HTML de la page
-   */
-  async init(items) {
-    const template = await super.init();
-
-    // Liste des structures
-    this.setItems(items, template);
-
-    return template;
-  }
-
-  /**
-   * Affichage des structures/recherches
-   * @param {StructureModel[]|ResearchModel[]} items Liste des structures/recherches
+   * Affichage des types d'unités
+   * @param {UnitTypeModel[]} unitTypes Liste des types d'unités
    * @param {Node} target Noeud HTML
    */
-  setItems(items, target = document) {
-    const itemList = target.getElementById(`${this.itemType}-list`);
-    const itemTemplateRow = target.querySelector(`.${this.itemType}-table-row`);
+  setItems(unitTypes, target = document) {
+    const itemList = target.getElementById('item-list');
+    const itemTemplateRow = target.querySelector('.item-table-row');
 
     itemTemplateRow.remove();
 
-    items.forEach((item) => {
+    unitTypes.forEach((unitType) => {
       const itemRow = itemTemplateRow.cloneNode(true);
-      const itemImage = itemRow.querySelector(`.${this.itemType}-image`);
-      const itemNameTxt = itemRow.querySelector(`.${this.itemType}-name`);
-      const itemLvlTxt = itemRow.querySelector(`.${this.itemType}-lvl`);
-      const itemBuildBtn = itemRow.querySelector(`.${this.itemType}-build-btn`);
+      const itemImage = itemRow.querySelector('.item-image');
+      const itemNameTxt = itemRow.querySelector('.item-name');
+      const itemQtyTxt = itemRow.querySelector('.item-qty');
+      const itemBuildBtn = itemRow.querySelector('.item-build-btn');
 
-      itemImage.src = item.imgUrl;
-      itemImage.alt = item.name;
-      itemNameTxt.innerHTML = item.name;
-      itemLvlTxt.innerHTML = item.level;
+      itemImage.src = unitType.imgUrl;
+      itemImage.alt = unitType.name;
+      itemQtyTxt.innerHTML = unitType.units.filter((unit) => !unit.createInProgress).length;
+      itemNameTxt.innerHTML = unitType.name;
 
       const currentDate = new Date();
 
-      // Upgrade à terminer
-      if (item.upgradeInProgress && item.endTimeUpgrade <= currentDate) {
-        this.setButtonFinishBuild(itemBuildBtn);
-      }
-      // Upgrade en cours
-      else if (item.upgradeInProgress && item.endTimeUpgrade > currentDate) {
-        this.setButtonInProgressBuild(item, itemBuildBtn);
+      const unit = unitType.units.find((unit) => unit.createInProgress);
+
+      if (unit) {
+        // Upgrade à terminer
+        if (unit.endTimeCreate <= currentDate) {
+          this.setButtonFinishBuild(itemBuildBtn);
+        }
+        // Upgrade en cours
+        else {
+          this.setButtonInProgressBuild(unit, itemBuildBtn);
+        }
       }
       // Pas d'upgrade en cours
       else {
-        this.setButtonStartBuild(item, itemBuildBtn);
+        this.setButtonStartBuild(unitType, itemBuildBtn);
       }
 
       // S'il y a des prérequis, alors le bouton de construction est désactivé
-      if (item.prerequisites.length !== 0) {
+      if (unitType.prerequisites.length !== 0) {
         itemBuildBtn.disabled = true;
       }
 
       // Affichage des coûts
-      this.setCosts(item.costs, itemRow);
+      this.setCosts(unitType.costs, itemRow);
 
       // Affichage des prérequis
-      this.setPrerequisites(item.prerequisites, itemRow);
+      this.setPrerequisites(unitType.prerequisites, itemRow);
 
       itemList.appendChild(itemRow);
     });
   }
 
   /**
-   * Mise à jour d'une structure à la finalisation de la construction
-   * @param {StructureModel|ResearchModel} item Structure/recherche
-   * @param {number} index Position de la structure/recherche sur la page
+   * Mise à jour du type d'unité à la finalisation de la construction
+   * @param {UnitTypeModel} unitType Type d'unités
+   * @param {number} itemIndex Position du type d'unité sur la page
    */
-  async refreshItemFinishBuild(item, index) {
-    const itemRow = document.querySelectorAll(`.${this.itemType}-table-row`)[index];
-    const itemLvlTxt = itemRow.querySelector(`.${this.itemType}-lvl`);
-    const itemBuildBtn = itemRow.querySelector(`.${this.itemType}-build-btn`);
+  refreshItemFinishBuild(unitType, itemIndex) {
+    const itemRow = document.querySelectorAll('.item-table-row')[itemIndex];
+    const itemQtyTxt = itemRow.querySelector('.item-qty');
+    const itemBuildBtn = itemRow.querySelector('.item-build-btn');
 
-    itemLvlTxt.innerHTML = item.level;
+    itemQtyTxt.innerHTML = unitType.units.length;
 
     // Affichage du bouton
-    this.setButtonStartBuild(item, itemBuildBtn);
+    this.setButtonStartBuild(unitType, itemBuildBtn);
 
     // Affichage des coûts
-    this.setCosts(item.costs, itemRow);
+    this.setCosts(unitType.costs, itemRow);
   }
 
   /**
-   * Affichage des coûts sur la page
-   * @param {CostModel[]} costs Coûts de la structure/recherche
-   * @param {Node} target Noeud HTML
+   * Gestion du bouton pour indiquer que la construction d'une unité est en cours
+   * @param {UnitModel} unit Unité
+   * @param {Element} unitBuildBtn Bouton de construction de l'unité
    */
-  setCosts(costs, target) {
-    const costTemplateRow = target.querySelector(`.${this.itemType}-cost-row`);
-    const costRows = target.querySelectorAll(`.${this.itemType}-cost-row`);
-    const itemTxt = target.querySelector(`.${this.itemType}-txt`);
-
-    costs.forEach((cost) => {
-      const costRow = costTemplateRow.cloneNode(true);
-      const costNameTxt = costRow.querySelector(`.${this.itemType}-cost-name`);
-      const costQuantityTxt = costRow.querySelector(`.${this.itemType}-cost-qty`);
-
-      costNameTxt.innerHTML = cost.name;
-      costQuantityTxt.innerHTML = cost.quantity;
-
-      itemTxt.appendChild(costRow);
-    });
-
-    costRows.forEach((costRow) => {
-      costRow.remove();
-    });
-  }
-
-  /**
-   * Affichage des prérequis sur la page
-   * @param {PrerequisiteModel[]} prerequisites Prérequis de la structure/recherche
-   * @param {Node} target Noeud HTML
-   */
-  setPrerequisites(prerequisites, target) {
-    const prerequisiteTemplateRow = target.querySelector(`.${this.itemType}-prerequisite-row`);
-    const prerequisiteRows = target.querySelectorAll(`.${this.itemType}-prerequisite-row`);
-    const prerequisiteList = target.querySelector(`.${this.itemType}-prerequisite-banner`);
-
-    prerequisites.forEach((prerequisite) => {
-      const prerequisiteRow = prerequisiteTemplateRow.cloneNode(true);
-      const prerequisiteNameTxt = prerequisiteRow.querySelector(`.${this.itemType}-prerequisite-name`);
-      const prerequisiteLvlTxt = prerequisiteRow.querySelector(`.${this.itemType}-prerequisite-lvl`);
-
-      prerequisiteNameTxt.innerHTML = prerequisite.name;
-      prerequisiteLvlTxt.innerHTML = prerequisite.level;
-
-      prerequisiteList.appendChild(prerequisiteRow);
-    });
-
-    prerequisiteRows.forEach((prerequisiteRow) => {
-      prerequisiteRow.remove();
-    });
-  }
-
-  /**
-   * Gestion du bouton pour indiquer que la construction de la structure/recherche peut être terminée
-   * @param {Element} itemBuildBtn Bouton de construction de la structure/recherche
-   */
-  setButtonFinishBuild(itemBuildBtn) {
-    const itemButton = itemBuildBtn;
-
-    itemButton.innerHTML = 'Terminer';
-    itemButton.classList.add('btn-finish');
-    itemButton.disabled = false;
-  }
-
-  /**
-   * Gestion du bouton pour indiquer que la construction de la structure/recherche est en cours
-   * @param {StructureModel|ResearchModel} item Structure/recherche
-   * @param {Element} itemBuildBtn Bouton de construction de la structure/recherche
-   */
-  setButtonInProgressBuild(item, itemBuildBtn) {
-    const itemButton = itemBuildBtn;
+  setButtonInProgressBuild(unit, unitBuildBtn) {
     const currentDate = new Date();
-    let leftTime = Math.ceil((item.endTimeUpgrade - currentDate) / 1000);
+    const leftTime = Math.ceil((unit.endTimeCreate - currentDate) / 1000);
 
-    // Timer
-    const timerId = setInterval(() => {
-      leftTime -= 1;
-      itemButton.innerHTML = `En cours <br/>${this.displayTime(leftTime)}`;
-      itemButton.disabled = true;
-
-      if (leftTime <= 0) {
-        itemButton.innerHTML = 'Terminer';
-        itemButton.disabled = false;
-        itemButton.classList.add('btn-finish');
-        clearInterval(timerId);
-      }
-    }, 1000);
+    super.setButtonInProgressBuild(unitBuildBtn, leftTime);
   }
 
   /**
-   * Gestion du bouton pour indiquer que la construction de la structure/recherche peut être commencée
-   * @param {StructureModel|ResearchModel} item Structure/recherche
-   * @param {Element} itemBuildBtn Bouton de construction de la structure/recherche
+   * Gestion du bouton pour indiquer que la construction d'une unité peut être commencée
+   * @param {UnitTypeModel} unitType Type d'unité
+   * @param {Element} unitBuildBtn Bouton de construction de l'unité
    */
-  setButtonStartBuild(item, itemBuildBtn) {
-    const itemButton = itemBuildBtn;
-
-    itemButton.innerHTML = `Construire <br/>${this.displayTime(item.buildTime)}`;
-    itemButton.classList.remove('btn-finish');
-    itemButton.disabled = false;
+  setButtonStartBuild(unit, unitBuildBtn) {
+    const buttonTxt = `Construire <br/>${this.displayTime(unit.buildTime)}`;
+    super.setButtonStartBuild(unitBuildBtn, buttonTxt);
   }
 }

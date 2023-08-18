@@ -1,9 +1,10 @@
 import MainController from './controllers/main.controller.js';
+import ErrorController from './controllers/error.controller.js';
 import HomeController from './controllers/home.controller.js';
 import UniverseController from './controllers/universe.controller.js';
 import StructureController from './controllers/structure.controller.js';
 import ResearchController from './controllers/research.controller.js';
-import ErrorController from './controllers/error.controller.js';
+import UnitController from './controllers/unit.controller.js';
 
 class App {
   constructor() {
@@ -13,6 +14,7 @@ class App {
     this.universeController = new UniverseController();
     this.structureController = new StructureController();
     this.researchController = new ResearchController();
+    this.unitController = new UnitController();
     this.content = document.querySelector('.main-content');
 
     this.controllers = {
@@ -21,6 +23,7 @@ class App {
       universe: this.universeController,
       structure: this.structureController,
       research: this.researchController,
+      unit: this.unitController,
     };
 
     window.addEventListener('hashchange', () => {

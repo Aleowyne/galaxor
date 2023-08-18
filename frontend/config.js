@@ -5,6 +5,7 @@ export default class Config {
     universe: 'frontend/templates/universe.html',
     structure: 'frontend/templates/structure.html',
     research: 'frontend/templates/research.html',
+    unit: 'frontend/templates/unit.html',
   };
 
   /**

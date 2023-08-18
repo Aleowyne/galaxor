@@ -1,9 +1,11 @@
-import UnitController from './unit.controller.js';
+import ItemController from './item.controller.js';
 import ResearchModel from '../models/research.model.js';
+import ResearchView from '../views/research.view.js';
 
-export default class ResearchController extends UnitController {
+export default class ResearchController extends ItemController {
   constructor() {
-    super('research');
+    super();
+    this.view = new ResearchView();
     this.researches = [];
   }
 
@@ -14,6 +16,7 @@ export default class ResearchController extends UnitController {
    */
   async setupView(path) {
     await super.setupView(path);
+    this.view = new ResearchView(this.template);
 
     if (this.planet.id !== 0 && this.planet.ownerId === this.user.id) {
       // Récupération des recherches de la planète
@@ -53,7 +56,7 @@ export default class ResearchController extends UnitController {
    * Gestion de l'évènement "construction d'une recherche"
    */
   async addEventBuild() {
-    const buildBtns = document.querySelectorAll('.research-build-btn');
+    const buildBtns = document.querySelectorAll('.item-build-btn');
 
     buildBtns.forEach((buildBtn, index) => {
       buildBtn.addEventListener('click', async (event) => {
@@ -65,14 +68,14 @@ export default class ResearchController extends UnitController {
         try {
           // Finalisation de la construction
           if (research.upgradeInProgress && research.endTimeUpgrade <= currentDate) {
-            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/researches/${research.id}/finish`);
+            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/researches/${research.itemId}/finish`);
             research = new ResearchModel(jsonResponse);
             this.view.refreshItemFinishBuild(research, index);
           }
 
           // Lancement de la construction
           else {
-            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/researches/${research.id}/start`);
+            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/researches/${research.itemId}/start`);
             research = new ResearchModel(jsonResponse);
             this.view.setButtonInProgressBuild(research, buildBtn);
           }

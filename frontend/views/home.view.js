@@ -2,7 +2,7 @@ import BaseView from './base.view.js';
 
 export default class HomeView extends BaseView {
   /**
-   * Initialisation de la vue
+   * Initialisation de la page
    * @param {UniverseModel[]} universes Liste des univers
    * @returns {Promise<Node>} Noeud HTML de la page
    */

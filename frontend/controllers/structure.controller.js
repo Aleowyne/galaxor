@@ -1,9 +1,11 @@
-import UnitController from './unit.controller.js';
+import ItemController from './item.controller.js';
 import StructureModel from '../models/structure.model.js';
+import StructureView from '../views/structure.view.js';
 
-export default class ResearchController extends UnitController {
+export default class StructureController extends ItemController {
   constructor() {
-    super('structure');
+    super();
+    this.view = new StructureView();
     this.structures = [];
   }
 
@@ -14,6 +16,7 @@ export default class ResearchController extends UnitController {
    */
   async setupView(path) {
     await super.setupView(path);
+    this.view = new StructureView(this.template);
 
     if (this.planet.id !== 0 && this.planet.ownerId === this.user.id) {
       // Récupération des structures de la planète
@@ -53,7 +56,7 @@ export default class ResearchController extends UnitController {
    * Gestion de l'évènement "construction d'une structure"
    */
   async addEventBuild() {
-    const buildBtns = document.querySelectorAll('.structure-build-btn');
+    const buildBtns = document.querySelectorAll('.item-build-btn');
 
     buildBtns.forEach((buildBtn, index) => {
       buildBtn.addEventListener('click', async (event) => {
@@ -65,14 +68,14 @@ export default class ResearchController extends UnitController {
         try {
           // Finalisation de la construction
           if (structure.upgradeInProgress && structure.endTimeUpgrade <= currentDate) {
-            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/structures/${structure.id}/finish`);
+            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/structures/${structure.itemId}/finish`);
             structure = new StructureModel(jsonResponse);
             this.view.refreshItemFinishBuild(structure, index);
           }
 
           // Lancement de la construction
           else {
-            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/structures/${structure.id}/start`);
+            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/structures/${structure.itemId}/start`);
             structure = new StructureModel(jsonResponse);
             this.view.setButtonInProgressBuild(structure, buildBtn);
           }
