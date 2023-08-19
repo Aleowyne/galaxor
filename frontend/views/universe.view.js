@@ -1,13 +1,15 @@
-import BaseView from './base.view.js';
+export default class UniverseView {
+  constructor(mainView) {
+    this.mainView = mainView;
+  }
 
-export default class UniverseView extends BaseView {
   /**
    * Initialisation de la page
    * @param {UniverseModel} universe Données de l'univers
    * @returns {Promise<Node>} Noeud HTML de la page
    */
   async init(universe) {
-    const template = await super.init();
+    const { template } = this.mainView;
 
     // Liste des galaxies
     this.setGalaxies(universe.galaxies, template);

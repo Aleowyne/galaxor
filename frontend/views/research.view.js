@@ -19,7 +19,7 @@ export default class ResearchView extends ItemView {
    * @param {Element} researchBuildBtn Bouton de construction de la recherche
    */
   setButtonStartBuild(research, researchBuildBtn) {
-    const buttonTxt = `Rechercher <br/>${this.displayTime(research.buildTime)}`;
+    const buttonTxt = `Rechercher <br/>${this.mainView.displayTime(research.buildTime)}`;
     super.setButtonStartBuild(researchBuildBtn, buttonTxt);
   }
 }

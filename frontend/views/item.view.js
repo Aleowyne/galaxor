@@ -1,15 +1,18 @@
-import BaseView from './base.view.js';
+export default class ItemView {
+  constructor(mainView) {
+    this.mainView = mainView;
+  }
 
-export default class ItemView extends BaseView {
   /**
    * Initialisation de la page
+   * @param {ItemModel} items Liste des items
    * @returns {Promise<Node>} Noeud HTML de la page
    */
-  async init(unitTypes) {
-    const template = await super.init();
+  async init(items) {
+    const { template } = this.mainView;
 
     // Liste des items
-    this.setItems(unitTypes, template);
+    this.setItems(items, template);
 
     return template;
   }
@@ -165,7 +168,7 @@ export default class ItemView extends BaseView {
     // Timer
     const timerId = setInterval(() => {
       leftTime -= 1;
-      itemButton.innerHTML = `En cours <br/>${this.displayTime(leftTime)}`;
+      itemButton.innerHTML = `En cours <br/>${this.mainView.displayTime(leftTime)}`;
       itemButton.disabled = true;
 
       if (leftTime <= 0) {

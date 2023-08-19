@@ -1,26 +1,25 @@
-import ItemController from './item.controller.js';
 import StructureModel from '../models/structure.model.js';
 import StructureView from '../views/structure.view.js';
 
-export default class StructureController extends ItemController {
+export default class StructureController {
   constructor() {
-    super();
-    this.view = new StructureView();
+    this.mainController = null;
+    this.view = null;
     this.structures = [];
   }
 
   /**
    * Construction de la vue
-   * @param {string} path Chemin de la page
+   * @param {MainController} mainController Contrôleur principal
    * @returns {Promise<Node>} Noeud HTML de la page
    */
-  async setupView(path) {
-    await super.setupView(path);
-    this.view = new StructureView(this.template);
+  async setupView(mainController) {
+    this.mainController = mainController;
+    this.view = new StructureView(this.mainController.view);
 
-    if (this.planet.id !== 0 && this.planet.ownerId === this.user.id) {
+    if (this.mainController.planet.id && this.mainController.planet.ownerId === this.mainController.user.id) {
       // Récupération des structures de la planète
-      this.structures = await this.getStructuresPlanet(this.planet.id);
+      this.structures = await this.getStructuresPlanet(this.mainController.planet.id);
       return this.view.init(this.structures);
     }
 
@@ -43,11 +42,11 @@ export default class StructureController extends ItemController {
   async getStructuresPlanet(planetId) {
     try {
       // Récupération des structures de la planète
-      const jsonResponse = await this.requestGet(`/galaxor/api/planets/${planetId}/structures`);
+      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/planets/${planetId}/structures`);
       return jsonResponse.structures.map((structure) => new StructureModel(structure));
     }
     catch (error) {
-      this.alertController.displayErrorAlert(error);
+      this.mainController.displayErrorAlert(error);
       return [];
     }
   }
@@ -64,26 +63,30 @@ export default class StructureController extends ItemController {
 
         let structure = this.structures[index];
         const currentDate = new Date();
+        const planetId = this.mainController.planet.id;
 
         try {
           // Finalisation de la construction
           if (structure.upgradeInProgress && structure.endTimeUpgrade <= currentDate) {
-            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/structures/${structure.itemId}/finish`);
+            const jsonResponse = await this.mainController.requestPut(`/galaxor/api/planets/${planetId}/structures/${structure.itemId}/finish`);
             structure = new StructureModel(jsonResponse);
             this.view.refreshItemFinishBuild(structure, index);
           }
 
           // Lancement de la construction
           else {
-            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/structures/${structure.itemId}/start`);
+            const jsonResponse = await this.mainController.requestPut(`/galaxor/api/planets/${planetId}/structures/${structure.itemId}/start`);
             structure = new StructureModel(jsonResponse);
             this.view.setButtonInProgressBuild(structure, buildBtn);
+
+            // Refresh des ressources
+            await this.mainController.refreshResources();
           }
 
           this.structures[index] = structure;
         }
         catch (error) {
-          this.alertController.displayErrorAlert(error);
+          this.mainController.displayErrorAlert(error);
         }
       });
     });

@@ -1,26 +1,104 @@
-import BaseController from './base.controller.js';
+import AlertController from './alert.controller.js';
 import UserModel from '../models/user.model.js';
+import PlanetModel from '../models/planet.model.js';
+import ResourceModel from '../models/resource.model.js';
+import MainView from '../views/main.view.js';
 
-export default class MainController extends BaseController {
+export default class MainController extends AlertController {
   constructor() {
     super();
+    this.loader = document.querySelector('.loader');
+    this.view = new MainView();
+    this.user = new UserModel();
+    this.planet = new PlanetModel();
+    this.resources = [];
+    this.resourceTimerId = 0;
+
+    // Déconnexion du joueur
     this.addEventLinkLogout();
   }
 
   /**
-   * Initialisation de la vue de la page
+   * Initialisation de la vue
    * @param {string} path Chemin d'accès
    */
-  setupView(path) {
-    const headerNav = document.querySelector('header');
+  async setupView(path) {
+    const planetId = Number(localStorage.getItem('planetId'));
 
-    // Header non visible si page d'accueil
-    if (path === '') {
-      headerNav.style.display = 'none';
+    if (!planetId || path === 'universe') {
+      this.planet = new PlanetModel();
+      this.resources = [];
+      localStorage.removeItem('planetId');
+
+      clearInterval(this.resourceTimerId);
     }
-    else {
-      headerNav.style.display = 'flex';
+    else if (this.planet.id !== planetId) {
+      // Récupération des données de la planète
+      this.planet = await this.getPlanet(planetId);
+
+      // Récupération des ressources de la planète
+      this.refreshResources();
     }
+
+    await this.view.init(path);
+  }
+
+  /**
+   * Récupération des données de la planète
+   * @param {number} planetId Identifiant de la planète
+   * @returns Les données de la planète
+   */
+  async getPlanet(planetId) {
+    try {
+      // Récupération des données de la planète
+      const jsonResponse = await this.requestGet(`/galaxor/api/planets/${planetId}`);
+      return new PlanetModel(jsonResponse);
+    }
+    catch (error) {
+      this.displayErrorAlert(error);
+      return new PlanetModel();
+    }
+  }
+
+  /**
+   * Récupération des ressources d'une planète
+   * @param {number} planetId Identifiant de la planète
+   * @returns Les ressources de la planète
+   */
+  async getResources(planetId) {
+    try {
+      // Récupération des resources
+      const jsonResponse = await this.requestGet(`/galaxor/api/planets/${planetId}/resources`);
+      return jsonResponse.resources.map((resource) => new ResourceModel(resource));
+    }
+    catch (error) {
+      this.displayErrorAlert(error);
+      return [];
+    }
+  }
+
+  /**
+   * Refresh des ressources
+   */
+  async refreshResources() {
+    // Récupération des ressources de la planète
+    this.resources = await this.getResources(this.planet.id);
+
+    // Affichage des ressources
+    this.view.displayResources(this.resources);
+
+    clearInterval(this.resourceTimerId);
+
+    // Refresh des ressources toutes les minutes
+    this.resourceTimerId = setInterval(() => {
+      this.resources = this.resources.map((resource) => {
+        const newResource = resource;
+        newResource.quantity += resource.production;
+        return newResource;
+      });
+
+      this.view.displayResources(this.resources);
+    }, 60000);
   }
 
   /**
@@ -34,6 +112,9 @@ export default class MainController extends BaseController {
 
       try {
         await this.requestPost('/galaxor/api/users/logout');
+        this.user = new UserModel();
+        localStorage.clear();
+
         document.location.href = '';
       }
       catch (error) {
@@ -51,10 +132,7 @@ export default class MainController extends BaseController {
 
     try {
       const jsonResponse = await this.requestPost('/galaxor/api/users/login');
-      const user = new UserModel(jsonResponse);
-
-      const loginEvent = new CustomEvent('login', { detail: user });
-      document.body.dispatchEvent(loginEvent);
+      this.user = new UserModel(jsonResponse);
 
       // Si l'utilisateur vient de se connecter, il sera redirigé vers la page des univers
       if (path === '') {
@@ -72,5 +150,97 @@ export default class MainController extends BaseController {
     }
 
     return path;
+  }
+
+  /**
+   * Affichage d'une boîte de dialogue
+   * @param {string} message Message à afficher
+   */
+  displayDialog(message) {
+    const dialog = document.getElementById('app-dialog');
+    const txtDialog = document.getElementById('app-dialog-txt');
+    txtDialog.innerHTML = message;
+    dialog.style.display = 'flex';
+  }
+
+  /**
+   * Exécution d'une requête GET HTTP
+   * @param {string} url URL de la requête
+   * @returns {Promise<any>} Données JSON de la réponse
+   */
+  async requestGet(url) {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+
+    const json = await response.json();
+
+    if (!response.status.toString().startsWith('2')) {
+      throw json.error;
+    }
+
+    return json;
+  }
+
+  /**
+   * Exécution d'une requête POST HTTP
+   * @param {string} url URL de la requête
+   * @param {object} body Corps de la requête
+   * @returns {Promise<any>} Données JSON de la réponse
+   */
+  async requestPost(url, body = {}) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (response.status === 204) {
+      return Promise.resolve('');
+    }
+
+    const json = await response.json();
+
+    if (!response.status.toString().startsWith('2')) {
+      throw json.error;
+    }
+
+    return json;
+  }
+
+  /**
+   * Exécution d'une requête PUT HTTP
+   * @param {string} url URL de la requête
+   * @param {object} body Corps de la requête
+   * @returns {Promise<any>} Données JSON de la réponse
+   */
+  async requestPut(url, body = {}) {
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (response.status === 204) {
+      return Promise.resolve('');
+    }
+
+    const json = await response.json();
+
+    if (!response.status.toString().startsWith('2')) {
+      throw json.error;
+    }
+
+    return json;
   }
 }

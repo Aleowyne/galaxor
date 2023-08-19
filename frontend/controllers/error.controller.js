@@ -1,20 +1,20 @@
-import BaseController from './base.controller.js';
 import ErrorView from '../views/error.view.js';
 
-export default class ErrorController extends BaseController {
+export default class ErrorController {
   constructor() {
-    super();
-    this.view = new ErrorView();
+    this.mainController = null;
+    this.view = null;
   }
 
   /**
    * Construction de la vue
-   * @param {string} path Chemin de la page
+   * @param {MainController} mainController Contrôleur principal
    * @returns {Promise<Node>} Noeud HTML de la page
    */
-  async setupView(path) {
-    super.setupView(path);
-    this.view = new ErrorView(this.template);
+  async setupView(mainController) {
+    this.mainController = mainController;
+    this.view = new ErrorView(this.mainController.view);
+
     return this.view.init();
   }
 }

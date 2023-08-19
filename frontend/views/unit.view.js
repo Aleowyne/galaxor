@@ -95,7 +95,7 @@ export default class UnitView extends ItemView {
    * @param {Element} unitBuildBtn Bouton de construction de l'unité
    */
   setButtonStartBuild(unit, unitBuildBtn) {
-    const buttonTxt = `Construire <br/>${this.displayTime(unit.buildTime)}`;
+    const buttonTxt = `Construire <br/>${this.mainView.displayTime(unit.buildTime)}`;
     super.setButtonStartBuild(unitBuildBtn, buttonTxt);
   }
 }

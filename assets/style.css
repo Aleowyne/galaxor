@@ -92,21 +92,31 @@ body {
 
 /* Header */
 .header {
-  position: fixed;
   display: none;
-  flex-direction: row-reverse;
-  width: 100%;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 15px 20px;
   background-color: var(--color-background-nav);
 }
 
 .header-navbar {
+  display: flex;
+  align-items: center;
   list-style: none;
-  padding: 15px 20px;
+}
+
+.header-navbar-item {
+  padding: 0 20px;
 }
 
 .header-navbar-link {
   color: var(--color-content-light);
   text-decoration: none;
+}
+
+.header-navbar-img {
+  vertical-align: text-bottom;
+  width: 20px;
 }
 
 /* Page d'accueil */

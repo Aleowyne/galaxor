@@ -1,31 +1,29 @@
-import ItemController from './item.controller.js';
 import UnitModel from '../models/unit.model.js';
 import UnitTypeModel from '../models/unittype.model.js';
 import UnitView from '../views/unit.view.js';
 
-export default class UnitController extends ItemController {
+export default class UnitController {
   constructor() {
-    super();
-    this.view = new UnitView();
-    this.units = [];
+    this.mainController = null;
+    this.view = null;
     this.unitTypes = [];
   }
 
   /**
    * Construction de la vue
-   * @param {string} path Chemin de la page
+   * @param {MainController} mainController Contrôleur principal
    * @returns {Promise<Node>} Noeud HTML de la page
    */
-  async setupView(path) {
-    await super.setupView(path);
-    this.view = new UnitView(this.template);
+  async setupView(mainController) {
+    this.mainController = mainController;
+    this.view = new UnitView(this.mainController.view);
 
-    if (this.planet.id !== 0 && this.planet.ownerId === this.user.id) {
+    if (this.mainController.planet.id && this.mainController.planet.ownerId === this.mainController.user.id) {
       // Récupération des unités de la planète
-      this.units = await this.getUnitsPlanet(this.planet.id);
+      this.units = await this.getUnitsPlanet(this.mainController.planet.id);
 
       // Récupération des types d'unités
-      this.unitTypes = await this.getUnitTypesPlanet(this.planet.id);
+      this.unitTypes = await this.getUnitTypesPlanet(this.mainController.planet.id);
 
       return this.view.init(this.unitTypes);
     }
@@ -49,11 +47,11 @@ export default class UnitController extends ItemController {
   async getUnitsPlanet(planetId) {
     try {
       // Récupération des unités de la planète
-      const jsonResponse = await this.requestGet(`/galaxor/api/planets/${planetId}/units`);
+      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/planets/${planetId}/units`);
       return jsonResponse.units.map((unit) => new UnitModel(unit));
     }
     catch (error) {
-      this.alertController.displayErrorAlert(error);
+      this.mainController.displayErrorAlert(error);
       return [];
     }
   }
@@ -66,11 +64,11 @@ export default class UnitController extends ItemController {
   async getUnitTypesPlanet(planetId) {
     try {
       // Récupération des unités de la planète
-      const jsonResponse = await this.requestGet(`/galaxor/api/planets/${planetId}/unittypes`);
+      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/planets/${planetId}/unittypes`);
       return jsonResponse.unit_types.map((unitType) => new UnitTypeModel(unitType, this.units));
     }
     catch (error) {
-      this.alertController.displayErrorAlert(error);
+      this.mainController.displayErrorAlert(error);
       return [];
     }
   }
@@ -87,6 +85,7 @@ export default class UnitController extends ItemController {
 
         const unitType = this.unitTypes[index];
         const currentDate = new Date();
+        const planetId = this.mainController.planet.id;
 
         try {
           // Vérification de l'existence d'une unité en cours de création
@@ -95,7 +94,7 @@ export default class UnitController extends ItemController {
 
           // Finalisation de la construction
           if (unit && unit.endTimeCreate <= currentDate) {
-            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/units/${unit.id}`);
+            const jsonResponse = await this.mainController.requestPut(`/galaxor/api/planets/${planetId}/units/${unit.id}`);
             unit = new UnitModel(jsonResponse);
 
             this.view.refreshItemFinishBuild(unitType, index);
@@ -109,16 +108,19 @@ export default class UnitController extends ItemController {
               item_id: unitType.itemId,
             };
 
-            const jsonResponse = await this.requestPost(`/galaxor/api/planets/${this.planet.id}/units`, bodyRequest);
+            const jsonResponse = await this.mainController.requestPost(`/galaxor/api/planets/${planetId}/units`, bodyRequest);
             unit = new UnitModel(jsonResponse);
 
             this.view.setButtonInProgressBuild(unit, buildBtn);
 
             this.unitTypes[index].units.push(unit);
+
+            // Refresh des ressources
+            await this.mainController.refreshResources();
           }
         }
         catch (error) {
-          this.alertController.displayErrorAlert(error);
+          this.mainController.displayErrorAlert(error);
         }
       });
     });

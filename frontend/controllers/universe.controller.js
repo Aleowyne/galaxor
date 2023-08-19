@@ -1,12 +1,11 @@
-import BaseController from './base.controller.js';
 import UniverseModel from '../models/universe.model.js';
 import UniverseView from '../views/universe.view.js';
 
-export default class UniverseController extends BaseController {
+export default class UniverseController {
   constructor() {
-    super();
-    this.view = new UniverseView();
-    this.universe = new UniverseModel();
+    this.mainController = null;
+    this.view = null;
+    this.universe = null;
     this.selectedGalaxyId = 0;
     this.selectedSolarSystemId = 0;
     this.selectedPlanetId = 0;
@@ -15,19 +14,19 @@ export default class UniverseController extends BaseController {
 
   /**
    * Construction de la vue
-   * @param {string} path Chemin de la page
+   * @param {MainController} mainController Contrôleur principal
    * @returns {Promise<Node>} Noeud HTML de la page
    */
-  async setupView(path) {
-    await super.setupView(path);
-    this.view = new UniverseView(this.template);
+  async setupView(mainController) {
+    this.mainController = mainController;
+    this.view = new UniverseView(this.mainController.view);
 
-    const universeId = localStorage.getItem('universeId');
+    const universeId = Number(localStorage.getItem('universeId'));
 
     // Récupération des données de l'univers
     this.universe = await this.getUniverse(universeId);
 
-    if (this.universe.id !== 0) {
+    if (this.universe.id) {
       this.selectedGalaxyId = this.universe.galaxies[0].id;
       this.selectedSolarSystemId = this.universe.galaxies[0].solarSystems[0].id;
 
@@ -62,11 +61,11 @@ export default class UniverseController extends BaseController {
   async getUniverse(universeId) {
     try {
       // Récupération des données de l'univers
-      const jsonResponse = await this.requestGet(`/galaxor/api/universes/${universeId}`);
+      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/universes/${universeId}`);
       return new UniverseModel(jsonResponse);
     }
     catch (error) {
-      this.alertController.displayErrorAlert(error);
+      this.mainController.displayErrorAlert(error);
       return new UniverseModel();
     }
   }
@@ -108,7 +107,7 @@ export default class UniverseController extends BaseController {
       event.preventDefault();
 
       // Récupération de l'univers mis à jour
-      this.universe = await this.getUniverse(this.universe.id);
+      this.universe = await this.mainController.getUniverse(this.universe.id);
 
       const galaxy = this.universe.galaxies.find((galaxy) => galaxy.id === this.selectedGalaxyId);
 
@@ -147,7 +146,7 @@ export default class UniverseController extends BaseController {
           this.displayDialog('S\'installer sur cette planète ?');
         }
         // Planète de l'utilisateur
-        else if (ownerId === this.user.id) {
+        else if (ownerId === this.mainController.user.id) {
           localStorage.setItem('planetId', this.selectedPlanetId);
           document.location.href = '#structure';
         }
@@ -184,10 +183,10 @@ export default class UniverseController extends BaseController {
         // Assignation d'un utilisateur à la planète
         await this.requestPut(`/galaxor/api/planets/${this.selectedPlanetId}`, bodyRequest);
         userCell.innerHTML = this.user.name;
-        this.alertController.displaySuccessAlert('Planète conquise');
+        this.mainController.displaySuccessAlert('Planète conquise');
       }
       catch (error) {
-        this.alertController.displayErrorAlert(error);
+        this.mainController.displayErrorAlert(error);
       }
 
       dialog.style.display = 'none';

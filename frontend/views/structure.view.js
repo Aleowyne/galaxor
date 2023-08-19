@@ -19,7 +19,7 @@ export default class StructureView extends ItemView {
    * @param {Element} structureBuildBtn Bouton de construction de la structure
    */
   setButtonStartBuild(structure, structureBuildBtn) {
-    const buttonTxt = `Construire <br/>${this.displayTime(structure.buildTime)}`;
+    const buttonTxt = `Construire <br/>${this.mainView.displayTime(structure.buildTime)}`;
     super.setButtonStartBuild(structureBuildBtn, buttonTxt);
   }
 }

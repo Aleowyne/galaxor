@@ -9,21 +9,15 @@ import UnitController from './controllers/unit.controller.js';
 class App {
   constructor() {
     this.mainController = new MainController();
-    this.errorController = new ErrorController();
-    this.homeController = new HomeController();
-    this.universeController = new UniverseController();
-    this.structureController = new StructureController();
-    this.researchController = new ResearchController();
-    this.unitController = new UnitController();
     this.content = document.querySelector('.main-content');
 
     this.controllers = {
-      '': this.homeController,
-      error: this.errorController,
-      universe: this.universeController,
-      structure: this.structureController,
-      research: this.researchController,
-      unit: this.unitController,
+      '': new HomeController(),
+      error: new ErrorController(),
+      universe: new UniverseController(),
+      structure: new StructureController(),
+      research: new ResearchController(),
+      unit: new UnitController(),
     };
 
     window.addEventListener('hashchange', () => {
@@ -42,15 +36,15 @@ class App {
       return;
     }
 
-    // Initialisation de la vue du contrôleur principal (header, footer, navigation ...)
-    this.mainController.setupView(path);
+    // Initialisation de la vue du contrôleur principal
+    await this.mainController.setupView(path);
 
     // Détermination du contrôleur
     const controller = this.controllers[path] || this.controllers.error;
 
     // Construction de la vue du contrôleur
     this.content.innerHTML = '';
-    this.content.append(await controller.setupView(path));
+    this.content.append(await controller.setupView(this.mainController));
 
     // Traitement sur la page
     if (typeof controller.process === 'function') {

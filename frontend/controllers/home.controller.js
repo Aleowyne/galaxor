@@ -1,32 +1,25 @@
-import BaseController from './base.controller.js';
 import UserModel from '../models/user.model.js';
 import UniverseModel from '../models/universe.model.js';
 import HomeView from '../views/home.view.js';
 
-export default class HomeController extends BaseController {
+export default class HomeController {
   constructor() {
-    super();
-    this.view = new HomeView();
+    this.mainController = null;
+    this.view = null;
     this.universes = [];
   }
 
   /**
    * Construction de la vue
-   * @param {string} path Chemin de la page
+   * @param {MainController} mainController Contrôleur principal
    * @returns {Promise<Node>} Noeud HTML de la page
    */
-  async setupView(path) {
-    super.setupView(path);
-    this.view = new HomeView(this.template);
+  async setupView(mainController) {
+    this.mainController = mainController;
+    this.view = new HomeView(this.mainController.view);
 
-    try {
-      // Récupération des univers
-      const jsonResponse = await this.requestGet('/galaxor/api/universes');
-      this.universes = jsonResponse.universes.map((universe) => new UniverseModel(universe));
-    }
-    catch (error) {
-      this.alertController.displayErrorAlert(error);
-    }
+    // Récupération des univers
+    this.universes = await this.getUniverses();
 
     return this.view.init(this.universes);
   }
@@ -43,6 +36,22 @@ export default class HomeController extends BaseController {
 
     // Création d'un univers
     this.addEventButtonCreateUniverse();
+  }
+
+  /**
+   * Récupération des univers
+   * @returns La liste des univers
+   */
+  async getUniverses() {
+    try {
+      // Récupération des univers
+      const jsonResponse = await this.mainController.requestGet('/galaxor/api/universes');
+      return jsonResponse.universes.map((universe) => new UniverseModel(universe));
+    }
+    catch (error) {
+      this.mainController.displayErrorAlert(error);
+      return [];
+    }
   }
 
   /**
@@ -67,19 +76,17 @@ export default class HomeController extends BaseController {
 
         try {
           // Connexion de l'utilisateur
-          const jsonResponse = await this.requestPost('/galaxor/api/users/login', bodyRequest);
-          const user = new UserModel(jsonResponse);
+          const jsonResponse = await this.mainController.requestPost('/galaxor/api/users/login', bodyRequest);
+          this.mainController.user = new UserModel(jsonResponse);
 
-          const loginEvent = new CustomEvent('login', { detail: user });
-          document.body.dispatchEvent(loginEvent);
-
+          localStorage.clear();
           localStorage.setItem('universeId', universeId);
 
-          this.alertController.displaySuccessAlert('Connexion réussie');
+          this.mainController.displaySuccessAlert('Connexion réussie');
           document.location.href = '#universe';
         }
         catch (error) {
-          this.alertController.displayErrorAlert(error);
+          this.mainController.displayErrorAlert(error);
         }
       }
     });
@@ -108,12 +115,12 @@ export default class HomeController extends BaseController {
 
         try {
           // Inscription de l'utilisateur
-          await this.requestPost('/galaxor/api/users/register', bodyRequest);
+          await this.mainController.requestPost('/galaxor/api/users/register', bodyRequest);
 
-          this.alertController.displaySuccessAlert('Inscription réussie. Connectez-vous pour jouer.');
+          this.mainController.displaySuccessAlert('Inscription réussie. Connectez-vous pour jouer.');
         }
         catch (error) {
-          this.alertController.displayErrorAlert(error);
+          this.mainController.displayErrorAlert(error);
         }
       }
     });
@@ -132,17 +139,17 @@ export default class HomeController extends BaseController {
         this.loader.style.display = 'flex';
 
         // Création de l'univers
-        const jsonResponse = await this.requestPost('/galaxor/api/universes');
+        const jsonResponse = await this.mainController.requestPost('/galaxor/api/universes');
         const universe = new UniverseModel(jsonResponse);
 
         this.view.addUniverse(universe);
 
         this.loader.style.display = 'none';
 
-        this.alertController.displaySuccessAlert(`Univers ${universe.name} créé`);
+        this.mainController.displaySuccessAlert(`Univers ${universe.name} créé`);
       }
       catch (error) {
-        this.alertController.displayErrorAlert(error);
+        this.mainController.displayErrorAlert(error);
       }
     });
   }

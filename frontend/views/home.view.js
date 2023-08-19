@@ -1,13 +1,15 @@
-import BaseView from './base.view.js';
+export default class HomeView {
+  constructor(mainView) {
+    this.mainView = mainView;
+  }
 
-export default class HomeView extends BaseView {
   /**
    * Initialisation de la page
    * @param {UniverseModel[]} universes Liste des univers
    * @returns {Promise<Node>} Noeud HTML de la page
    */
   async init(universes) {
-    const template = await super.init();
+    const { template } = this.mainView;
 
     // Alimentation de la liste des univers
     const universeSelect = template.getElementById('login-universe');

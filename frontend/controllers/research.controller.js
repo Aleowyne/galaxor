@@ -1,26 +1,25 @@
-import ItemController from './item.controller.js';
 import ResearchModel from '../models/research.model.js';
 import ResearchView from '../views/research.view.js';
 
-export default class ResearchController extends ItemController {
+export default class ResearchController {
   constructor() {
-    super();
-    this.view = new ResearchView();
+    this.mainController = null;
+    this.view = null;
     this.researches = [];
   }
 
   /**
    * Construction de la vue
-   * @param {string} path Chemin de la page
+   * @param {MainController} mainController Contrôleur principal
    * @returns {Promise<Node>} Noeud HTML de la page
    */
-  async setupView(path) {
-    await super.setupView(path);
-    this.view = new ResearchView(this.template);
+  async setupView(mainController) {
+    this.mainController = mainController;
+    this.view = new ResearchView(this.mainController.view);
 
-    if (this.planet.id !== 0 && this.planet.ownerId === this.user.id) {
+    if (this.mainController.planet.id && this.mainController.planet.ownerId === this.mainController.user.id) {
       // Récupération des recherches de la planète
-      this.researches = await this.getResearchesPlanet(this.planet.id);
+      this.researches = await this.getResearchesPlanet(this.mainController.planet.id);
       return this.view.init(this.researches);
     }
 
@@ -43,11 +42,11 @@ export default class ResearchController extends ItemController {
   async getResearchesPlanet(planetId) {
     try {
       // Récupération des recherches de la planète
-      const jsonResponse = await this.requestGet(`/galaxor/api/planets/${planetId}/researches`);
+      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/planets/${planetId}/researches`);
       return jsonResponse.researches.map((research) => new ResearchModel(research));
     }
     catch (error) {
-      this.alertController.displayErrorAlert(error);
+      this.mainController.displayErrorAlert(error);
       return [];
     }
   }
@@ -64,26 +63,30 @@ export default class ResearchController extends ItemController {
 
         let research = this.researches[index];
         const currentDate = new Date();
+        const planetId = this.mainController.planet.id;
 
         try {
           // Finalisation de la construction
           if (research.upgradeInProgress && research.endTimeUpgrade <= currentDate) {
-            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/researches/${research.itemId}/finish`);
+            const jsonResponse = await this.mainController.requestPut(`/galaxor/api/planets/${planetId}/researches/${research.itemId}/finish`);
             research = new ResearchModel(jsonResponse);
             this.view.refreshItemFinishBuild(research, index);
           }
 
           // Lancement de la construction
           else {
-            const jsonResponse = await this.requestPut(`/galaxor/api/planets/${this.planet.id}/researches/${research.itemId}/start`);
+            const jsonResponse = await this.mainController.requestPut(`/galaxor/api/planets/${planetId}/researches/${research.itemId}/start`);
             research = new ResearchModel(jsonResponse);
             this.view.setButtonInProgressBuild(research, buildBtn);
+
+            // Refresh des ressources
+            await this.mainController.refreshResources();
           }
 
           this.researches[index] = research;
         }
         catch (error) {
-          this.alertController.displayErrorAlert(error);
+          this.mainController.displayErrorAlert(error);
         }
       });
     });

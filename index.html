@@ -14,7 +14,16 @@
   <div id="app-alert" class="alert">Alerte</div>
   <header class="header">
     <ul class="header-navbar">
-      <li><a id="logout-link" class="header-navbar-link" href="#">Déconnexion</a></li>
+      <li class="header-navbar-item">
+        <span id="header-metal-qty">0</span> <img class="header-navbar-img" src="assets/none.png" alt="Métal">
+      </li>
+      <li class="header-navbar-item">
+        <span id="header-deuterium-qty">0</span> <img class="header-navbar-img" src="assets/none.png" alt="Deutérium">
+      </li>
+      <li class="header-navbar-item">
+        <span id="header-energy-qty">0</span> <img class="header-navbar-img" src="assets/none.png" alt="Energie">
+      </li>
+      <li class="header-navbar-item"><a id="logout-link" class="header-navbar-link" href="#">Déconnexion</a></li>
     </ul>
   </header>
   <main class="main">
@@ -24,7 +33,7 @@
 
     <div id="app-dialog" class="dialog">
       <div class="dialog-content">
-        <p id="app-dialog-txt" class="dialog-content-txt">Ceci est un test.</p>
+        <p id="app-dialog-txt" class="dialog-content-txt"></p>
         <button id="app-dialog-confirm" class="btn">Oui</button>
         <button id="app-dialog-cancel" class="btn">Non</button>
       </div>
