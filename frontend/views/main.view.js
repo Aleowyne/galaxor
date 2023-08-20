@@ -8,8 +8,9 @@ export default class MainView {
   /**
    * Initialisation de la page
    * @param {string} path Chemin d'accès
+   * @param {string} planetName Nom de la planète
    */
-  async init(path) {
+  async init(path, planetName) {
     const templatePath = Config.getTemplate(path);
     const templateElement = document.createElement('div');
     const response = await fetch(templatePath);
@@ -18,14 +19,15 @@ export default class MainView {
     this.template = templateElement.querySelector('template').content.cloneNode(true);
 
     // Alimentation de la barre de navigation
-    this.setHeaderNav(path);
+    this.setHeaderNav(path, planetName);
   }
 
   /**
    * Alimentation de la barre de navigation
    * @param {string} path Chemin d'accès
+   * @param {string} planetName Nom de la planète
    */
-  setHeaderNav(path) {
+  setHeaderNav(path, planetName) {
     const headerNav = document.querySelector('header');
 
     // Header non visible si page d'accueil
@@ -34,7 +36,19 @@ export default class MainView {
       return;
     }
 
-    headerNav.style.display = 'flex';
+    headerNav.style.display = 'grid';
+
+    const planetHeader = document.getElementById('header-planet');
+    const planetNameTxt = document.getElementById('planet-name');
+
+    if (planetName) {
+      planetHeader.style.display = 'block';
+      planetNameTxt.innerHTML = planetName;
+    }
+    else {
+      planetHeader.style.display = 'none';
+      planetNameTxt.innerHTML = '';
+    }
   }
 
   /**

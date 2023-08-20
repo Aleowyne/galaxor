@@ -82,17 +82,15 @@ export default class UniverseView {
       const newRow = planetTableBody.insertRow(-1);
       newRow.classList.add('universe-table-tr');
 
+      if (planet) {
+        newRow.setAttribute('data-planetid', planet.id);
+      }
+
       for (let column = 0; column < 3; column += 1) {
         let nodeText = '';
 
         const newCell = newRow.insertCell(column);
         newCell.classList.add('universe-table-td');
-
-        if (planet) {
-          newCell.setAttribute('data-planetid', planet.id);
-          newCell.setAttribute('data-ownerid', planet.ownerId);
-          newCell.setAttribute('data-position', position);
-        }
 
         switch (column) {
           case 0:

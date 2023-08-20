@@ -31,6 +31,9 @@ export default class MainController extends AlertController {
       localStorage.removeItem('planetId');
 
       clearInterval(this.resourceTimerId);
+
+      // Mise à 0 des ressources
+      this.view.displayResources(this.resources);
     }
     else if (this.planet.id !== planetId) {
       // Récupération des données de la planète
@@ -40,7 +43,7 @@ export default class MainController extends AlertController {
       this.refreshResources();
     }
 
-    await this.view.init(path);
+    await this.view.init(path, this.planet.name);
   }
 
   /**
@@ -91,6 +94,7 @@ export default class MainController extends AlertController {
 
     // Refresh des ressources toutes les minutes
     this.resourceTimerId = setInterval(() => {
+      console.log(this.resources);
       this.resources = this.resources.map((resource) => {
         const newResource = resource;
         newResource.quantity += resource.production;

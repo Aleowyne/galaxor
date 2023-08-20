@@ -13,7 +13,21 @@
 <body>
   <div id="app-alert" class="alert">Alerte</div>
   <header class="header">
-    <ul class="header-navbar">
+    <div class="header-navbar-left">
+      <a id="home-link" class="header-navbar-link" href="#">GALAXOR</a>
+    </div>
+    <div class="header-navbar-center header-dropdown">
+      <span id="header-planet" class="header-navbar-planet">
+        <img class="header-navbar-img" src="assets/menu_icon.png" alt="Menu de la planète">
+        Planète <span id="planet-name"></span>
+      </span>
+      <div class="header-dropdown-content">
+        <p class="header-dropdown-item"><a class=" header-navbar-link" href="#structure">Structures</a></p>
+        <p class="header-dropdown-item"><a class=" header-navbar-link" href="#research">Recherches</a></p>
+        <p class="header-dropdown-item"><a class=" header-navbar-link" href="#unit">Chantier spatial</a></p>
+      </div>
+    </div>
+    <ul class="header-navbar-right">
       <li class="header-navbar-item">
         <span id="header-metal-qty">0</span> <img class="header-navbar-img" src="assets/none.png" alt="Métal">
       </li>

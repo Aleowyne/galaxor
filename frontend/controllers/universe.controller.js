@@ -8,8 +8,7 @@ export default class UniverseController {
     this.universe = null;
     this.selectedGalaxyId = 0;
     this.selectedSolarSystemId = 0;
-    this.selectedPlanetId = 0;
-    this.selectedPosition = 0;
+    this.selectedPlanet = null;
   }
 
   /**
@@ -107,7 +106,7 @@ export default class UniverseController {
       event.preventDefault();
 
       // Récupération de l'univers mis à jour
-      this.universe = await this.mainController.getUniverse(this.universe.id);
+      this.universe = await this.getUniverse(this.universe.id);
 
       const galaxy = this.universe.galaxies.find((galaxy) => galaxy.id === this.selectedGalaxyId);
 
@@ -128,27 +127,33 @@ export default class UniverseController {
    * Gestion de l'évènement "colonisation d'une planète"
    */
   addEventSettlePlanet() {
-    const planetCells = document.querySelectorAll('.universe-table-td');
+    const planetRows = document.querySelectorAll('.universe-table-tr');
 
-    planetCells.forEach((planetCell) => {
-      planetCell.addEventListener('click', async (event) => {
+    planetRows.forEach((planetRow) => {
+      planetRow.addEventListener('click', async (event) => {
         event.preventDefault();
+        const target = event.currentTarget;
 
         // Récupération de l'univers mis à jour
         this.universe = await this.getUniverse(this.universe.id);
 
-        const ownerId = Number(event.target.getAttribute('data-ownerid'));
-        this.selectedPlanetId = Number(event.target.getAttribute('data-planetid'));
-        this.selectedPosition = Number(event.target.getAttribute('data-position'));
+        // Récupération des données de la planète
+        const planetId = Number(target.getAttribute('data-planetid'));
 
-        // Planète n'appartenant à personne
-        if (ownerId === 0 && this.selectedPlanetId !== 0) {
-          this.displayDialog('S\'installer sur cette planète ?');
-        }
-        // Planète de l'utilisateur
-        else if (ownerId === this.mainController.user.id) {
-          localStorage.setItem('planetId', this.selectedPlanetId);
-          document.location.href = '#structure';
+        if (planetId) {
+          this.selectedPlanet = await this.mainController.getPlanet(planetId);
+
+          if (this.selectedPlanet) {
+            // Planète n'appartenant à personne
+            if (this.selectedPlanet.ownerId === 0) {
+              this.mainController.displayDialog('S\'installer sur cette planète ?');
+            }
+            // Planète de l'utilisateur
+            else if (this.selectedPlanet.ownerId === this.mainController.user.id) {
+              localStorage.setItem('planetId', this.selectedPlanet.id);
+              document.location.href = '#structure';
+            }
+          }
         }
       });
     });
@@ -173,16 +178,16 @@ export default class UniverseController {
     confirmDialog.addEventListener('click', async (event) => {
       event.preventDefault();
 
-      const userCell = document.getElementById('planet-list').rows[this.selectedPosition - 1].cells[2];
+      const userCell = document.getElementById('planet-list').rows[this.selectedPlanet.position - 1].cells[2];
 
       const bodyRequest = {
-        user_id: this.user.id,
+        user_id: this.mainController.user.id,
       };
 
       try {
         // Assignation d'un utilisateur à la planète
-        await this.requestPut(`/galaxor/api/planets/${this.selectedPlanetId}`, bodyRequest);
-        userCell.innerHTML = this.user.name;
+        await this.mainController.requestPut(`/galaxor/api/planets/${this.selectedPlanet.id}`, bodyRequest);
+        userCell.innerHTML = this.mainController.user.name;
         this.mainController.displaySuccessAlert('Planète conquise');
       }
       catch (error) {
