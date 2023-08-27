@@ -120,6 +120,7 @@ body {
 .header-navbar-planet {
   display: none;
   font-weight: bold;
+  cursor: pointer;
 }
 
 .header-navbar-item {
@@ -136,10 +137,6 @@ body {
   width: 20px;
 }
 
-.header-dropdown {
-  cursor: pointer;
-}
-
 .header-dropdown-content {
   display: none;
   position: absolute;
@@ -150,7 +147,7 @@ body {
   box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 1);
 }
 
-.header-dropdown:hover .header-dropdown-content {
+.header-dropdown:has(.header-navbar-planet:not([style*="display: none"])):hover .header-dropdown-content {
   display: block;
 }
 
@@ -247,7 +244,7 @@ body {
 
 .universe-galaxy,
 .universe-solarsystem {
-  width: 500px;
+  width: 400px;
   text-align: right;
   margin: 10px 0px;
 }
@@ -337,6 +334,65 @@ body {
 
 .item-prerequisite-name {
   font-weight: bold;
+}
+
+/* Page "Chantier naval" */
+.fleet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: auto;
+}
+
+.fleet-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fleet-table {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 30px;
+  column-gap: 30px;
+  margin-top: 20px;
+}
+
+.fleet-table-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 auto;
+}
+
+.fleet-name {
+  font-weight: bold;
+}
+
+.fleet-send-unit {
+  display: flex;
+  flex-direction: column;
+  margin: 20px 0px;
+}
+
+.fleet-form-label {
+  display: inline-block;
+  width: 150px;
+  text-align: right;
+}
+
+.fleet-form-unit-input,
+.fleet-form-select {
+  margin: 10px 0px;
+}
+
+.fleet-form-select {
+  width: 200px;
+}
+
+.fleet-form-btn {
+  margin-top: 10px;
+  text-align: center;
 }
 
 /* Page 404 */

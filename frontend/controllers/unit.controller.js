@@ -1,5 +1,4 @@
 import UnitModel from '../models/unit.model.js';
-import UnitTypeModel from '../models/unittype.model.js';
 import UnitView from '../views/unit.view.js';
 
 export default class UnitController {
@@ -18,17 +17,10 @@ export default class UnitController {
     this.mainController = mainController;
     this.view = new UnitView(this.mainController.view);
 
-    if (this.mainController.planet.id && this.mainController.planet.ownerId === this.mainController.user.id) {
-      // Récupération des unités de la planète
-      this.units = await this.getUnitsPlanet(this.mainController.planet.id);
+    // Récupération des types d'unités de la planète
+    this.unitTypes = await this.mainController.getUnitTypesPlanet();
 
-      // Récupération des types d'unités
-      this.unitTypes = await this.getUnitTypesPlanet(this.mainController.planet.id);
-
-      return this.view.init(this.unitTypes);
-    }
-
-    return document.createElement('div');
+    return this.view.init(this.unitTypes);
   }
 
   /**
@@ -37,40 +29,6 @@ export default class UnitController {
   process() {
     // Gestion de la construction
     this.addEventBuild();
-  }
-
-  /**
-   * Récupération des unités de la planète
-   * @param {number} planetId Identifiant de la planète
-   * @returns Les unités de la planète
-   */
-  async getUnitsPlanet(planetId) {
-    try {
-      // Récupération des unités de la planète
-      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/planets/${planetId}/units`);
-      return jsonResponse.units.map((unit) => new UnitModel(unit));
-    }
-    catch (error) {
-      this.mainController.displayErrorAlert(error);
-      return [];
-    }
-  }
-
-  /**
-   * Récupération des types d'unités de la planète
-   * @param {number} planetId Identifiant de la planète
-   * @returns Les types d'unités de la planète
-   */
-  async getUnitTypesPlanet(planetId) {
-    try {
-      // Récupération des unités de la planète
-      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/planets/${planetId}/unittypes`);
-      return jsonResponse.unit_types.map((unitType) => new UnitTypeModel(unitType, this.units));
-    }
-    catch (error) {
-      this.mainController.displayErrorAlert(error);
-      return [];
-    }
   }
 
   /**
@@ -99,7 +57,7 @@ export default class UnitController {
 
             this.view.refreshItemFinishBuild(unitType, index);
 
-            this.units[unitIndex] = unit;
+            this.unitTypes[index].units[unitIndex] = unit;
           }
 
           // Lancement de la construction

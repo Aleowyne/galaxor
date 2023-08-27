@@ -17,13 +17,9 @@ export default class ResearchController {
     this.mainController = mainController;
     this.view = new ResearchView(this.mainController.view);
 
-    if (this.mainController.planet.id && this.mainController.planet.ownerId === this.mainController.user.id) {
-      // Récupération des recherches de la planète
-      this.researches = await this.getResearchesPlanet(this.mainController.planet.id);
-      return this.view.init(this.researches);
-    }
-
-    return document.createElement('div');
+    // Récupération des recherches de la planète
+    this.researches = await this.getResearchesPlanet();
+    return this.view.init(this.researches);
   }
 
   /**
@@ -36,13 +32,12 @@ export default class ResearchController {
 
   /**
    * Récupération des recherches de la planète
-   * @param {number} planetId Identifiant de la planète
    * @returns Les recherches de la planète
    */
-  async getResearchesPlanet(planetId) {
+  async getResearchesPlanet() {
     try {
       // Récupération des recherches de la planète
-      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/planets/${planetId}/researches`);
+      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/planets/${this.mainController.planet.id}/researches`);
       return jsonResponse.researches.map((research) => new ResearchModel(research));
     }
     catch (error) {

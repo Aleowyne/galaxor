@@ -1,7 +1,10 @@
 import AlertController from './alert.controller.js';
 import UserModel from '../models/user.model.js';
+import UniverseModel from '../models/universe.model.js';
 import PlanetModel from '../models/planet.model.js';
 import ResourceModel from '../models/resource.model.js';
+import UnitModel from '../models/unit.model.js';
+import UnitTypeModel from '../models/unittype.model.js';
 import MainView from '../views/main.view.js';
 
 export default class MainController extends AlertController {
@@ -10,6 +13,7 @@ export default class MainController extends AlertController {
     this.loader = document.querySelector('.loader');
     this.view = new MainView();
     this.user = new UserModel();
+    this.universe = new UniverseModel();
     this.planet = new PlanetModel();
     this.resources = [];
     this.resourceTimerId = 0;
@@ -24,26 +28,54 @@ export default class MainController extends AlertController {
    */
   async setupView(path) {
     const planetId = Number(localStorage.getItem('planetId'));
+    const universeId = Number(localStorage.getItem('universeId'));
+
+    if (universeId) {
+      // Récupération des données de l'univers
+      this.universe = await this.getUniverse(universeId);
+    }
 
     if (!planetId || path === 'universe') {
       this.planet = new PlanetModel();
       this.resources = [];
       localStorage.removeItem('planetId');
 
-      clearInterval(this.resourceTimerId);
-
-      // Mise à 0 des ressources
-      this.view.displayResources(this.resources);
+      // Refresh des ressources de la planète
+      this.refreshResources();
     }
     else if (this.planet.id !== planetId) {
       // Récupération des données de la planète
       this.planet = await this.getPlanet(planetId);
 
-      // Récupération des ressources de la planète
+      // Refresh des ressources de la planète
       this.refreshResources();
     }
 
     await this.view.init(path, this.planet.name);
+  }
+
+  /**
+   * Récupération des données de l'univers
+   * @param {number} universeId Identifiant de l'univers
+   * @returns Les données de l'univers
+   */
+  async getUniverse(universeId) {
+    try {
+      // Récupération des données de l'univers
+      const jsonResponse = await this.requestGet(`/galaxor/api/universes/${universeId}`);
+      return new UniverseModel(jsonResponse);
+    }
+    catch (error) {
+      this.displayErrorAlert(error);
+      return new UniverseModel();
+    }
+  }
+
+  /**
+   * Refresh des données de l'univers
+   */
+  async refreshUniverse() {
+    this.universe = await this.getUniverse(this.universe.id);
   }
 
   /**
@@ -60,6 +92,26 @@ export default class MainController extends AlertController {
     catch (error) {
       this.displayErrorAlert(error);
       return new PlanetModel();
+    }
+  }
+
+  /**
+   * Récupération des types d'unités de la planète
+   * @returns Les types d'unités de la planète
+   */
+  async getUnitTypesPlanet() {
+    try {
+      // Récupération des unités de la planète
+      let jsonResponse = await this.requestGet(`/galaxor/api/planets/${this.planet.id}/units`);
+      const units = jsonResponse.units.map((unit) => new UnitModel(unit));
+
+      // Récupération des types d'unités de la planète
+      jsonResponse = await this.requestGet(`/galaxor/api/planets/${this.planet.id}/unittypes`);
+      return jsonResponse.unit_types.map((unitType) => new UnitTypeModel(unitType, units));
+    }
+    catch (error) {
+      this.displayErrorAlert(error);
+      return [];
     }
   }
 
@@ -84,17 +136,18 @@ export default class MainController extends AlertController {
    * Refresh des ressources
    */
   async refreshResources() {
-    // Récupération des ressources de la planète
-    this.resources = await this.getResources(this.planet.id);
+    clearInterval(this.resourceTimerId);
+
+    if (this.planet.id) {
+      // Récupération des ressources de la planète
+      this.resources = await this.getResources(this.planet.id);
+    }
 
     // Affichage des ressources
     this.view.displayResources(this.resources);
 
-    clearInterval(this.resourceTimerId);
-
     // Refresh des ressources toutes les minutes
     this.resourceTimerId = setInterval(() => {
-      console.log(this.resources);
       this.resources = this.resources.map((resource) => {
         const newResource = resource;
         newResource.quantity += resource.production;
@@ -133,13 +186,15 @@ export default class MainController extends AlertController {
    */
   async determinePath() {
     const path = window.location.hash.substring(1);
+    const universeId = Number(localStorage.getItem('universeId'));
+    const planetId = Number(localStorage.getItem('planetId'));
 
     try {
       const jsonResponse = await this.requestPost('/galaxor/api/users/login');
       this.user = new UserModel(jsonResponse);
 
       // Si l'utilisateur vient de se connecter, il sera redirigé vers la page des univers
-      if (path === '') {
+      if ((!universeId && !planetId && path !== 'universe') || path === '') {
         document.location.href = '#universe';
         return 'redirect';
       }

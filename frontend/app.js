@@ -5,6 +5,7 @@ import UniverseController from './controllers/universe.controller.js';
 import StructureController from './controllers/structure.controller.js';
 import ResearchController from './controllers/research.controller.js';
 import UnitController from './controllers/unit.controller.js';
+import FleetController from './controllers/fleet.controller.js';
 
 class App {
   constructor() {
@@ -18,6 +19,7 @@ class App {
       structure: new StructureController(),
       research: new ResearchController(),
       unit: new UnitController(),
+      fleet: new FleetController(),
     };
 
     window.addEventListener('hashchange', () => {

@@ -17,13 +17,9 @@ export default class StructureController {
     this.mainController = mainController;
     this.view = new StructureView(this.mainController.view);
 
-    if (this.mainController.planet.id && this.mainController.planet.ownerId === this.mainController.user.id) {
-      // Récupération des structures de la planète
-      this.structures = await this.getStructuresPlanet(this.mainController.planet.id);
-      return this.view.init(this.structures);
-    }
-
-    return document.createElement('div');
+    // Récupération des structures de la planète
+    this.structures = await this.getStructuresPlanet();
+    return this.view.init(this.structures);
   }
 
   /**
@@ -36,13 +32,12 @@ export default class StructureController {
 
   /**
    * Récupération des structures de la planète
-   * @param {number} planetId Identifiant de la planète
    * @returns Les structures de la planète
    */
-  async getStructuresPlanet(planetId) {
+  async getStructuresPlanet() {
     try {
       // Récupération des structures de la planète
-      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/planets/${planetId}/structures`);
+      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/planets/${this.mainController.planet.id}/structures`);
       return jsonResponse.structures.map((structure) => new StructureModel(structure));
     }
     catch (error) {

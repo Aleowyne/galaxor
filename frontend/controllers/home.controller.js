@@ -130,13 +130,13 @@ export default class HomeController {
    * Gestion de l'évènement "création d'un univers"
    */
   addEventButtonCreateUniverse() {
-    const createButton = document.getElementById('create-universe-btn');
+    const createBtn = document.getElementById('create-universe-btn');
 
-    createButton.addEventListener('click', async (event) => {
+    createBtn.addEventListener('click', async (event) => {
       event.preventDefault();
 
       try {
-        this.loader.style.display = 'flex';
+        this.mainController.loader.style.display = 'flex';
 
         // Création de l'univers
         const jsonResponse = await this.mainController.requestPost('/galaxor/api/universes');
@@ -144,13 +144,13 @@ export default class HomeController {
 
         this.view.addUniverse(universe);
 
-        this.loader.style.display = 'none';
-
         this.mainController.displaySuccessAlert(`Univers ${universe.name} créé`);
       }
       catch (error) {
         this.mainController.displayErrorAlert(error);
       }
+
+      this.mainController.loader.style.display = 'none';
     });
   }
 }

@@ -1,11 +1,9 @@
-import UniverseModel from '../models/universe.model.js';
 import UniverseView from '../views/universe.view.js';
 
 export default class UniverseController {
   constructor() {
     this.mainController = null;
     this.view = null;
-    this.universe = null;
     this.selectedGalaxyId = 0;
     this.selectedSolarSystemId = 0;
     this.selectedPlanet = null;
@@ -20,19 +18,10 @@ export default class UniverseController {
     this.mainController = mainController;
     this.view = new UniverseView(this.mainController.view);
 
-    const universeId = Number(localStorage.getItem('universeId'));
+    // Initialisation des sélections
+    await this.initSelect();
 
-    // Récupération des données de l'univers
-    this.universe = await this.getUniverse(universeId);
-
-    if (this.universe.id) {
-      this.selectedGalaxyId = this.universe.galaxies[0].id;
-      this.selectedSolarSystemId = this.universe.galaxies[0].solarSystems[0].id;
-
-      return this.view.init(this.universe);
-    }
-
-    return document.createElement('div');
+    return this.view.init(this.mainController.universe);
   }
 
   /**
@@ -53,20 +42,11 @@ export default class UniverseController {
   }
 
   /**
-   * Récupération des données de l'univers
-   * @param {number} universeId Identifiant de l'univers
-   * @returns Les données de l'univers
+   * Initialisation des sélections
    */
-  async getUniverse(universeId) {
-    try {
-      // Récupération des données de l'univers
-      const jsonResponse = await this.mainController.requestGet(`/galaxor/api/universes/${universeId}`);
-      return new UniverseModel(jsonResponse);
-    }
-    catch (error) {
-      this.mainController.displayErrorAlert(error);
-      return new UniverseModel();
-    }
+  async initSelect() {
+    this.selectedGalaxyId = this.mainController.universe.galaxies[0].id;
+    this.selectedSolarSystemId = this.mainController.universe.galaxies[0].solarSystems[0].id;
   }
 
   /**
@@ -78,9 +58,12 @@ export default class UniverseController {
     galaxySelect.addEventListener('change', async (event) => {
       event.preventDefault();
 
+      // Récupération de l'univers mis à jour
+      await this.mainController.refreshUniverse();
+
       // Récupération des systèmes solaires à partir de la galaxie choisie
       this.selectedGalaxyId = Number(event.target.value);
-      const galaxy = this.universe.galaxies.find((galaxy) => galaxy.id === this.selectedGalaxyId);
+      const galaxy = this.mainController.universe.galaxies.find((galaxy) => galaxy.id === this.selectedGalaxyId);
 
       if (galaxy) {
         this.view.setSolarSystems(galaxy.solarSystems);
@@ -106,9 +89,9 @@ export default class UniverseController {
       event.preventDefault();
 
       // Récupération de l'univers mis à jour
-      this.universe = await this.getUniverse(this.universe.id);
+      await this.mainController.refreshUniverse();
 
-      const galaxy = this.universe.galaxies.find((galaxy) => galaxy.id === this.selectedGalaxyId);
+      const galaxy = this.mainController.universe.galaxies.find((galaxy) => galaxy.id === this.selectedGalaxyId);
 
       // Récupération des planètes à partir du système solaire choisi
       this.selectedSolarSystemId = Number(event.target.value);
@@ -135,7 +118,7 @@ export default class UniverseController {
         const target = event.currentTarget;
 
         // Récupération de l'univers mis à jour
-        this.universe = await this.getUniverse(this.universe.id);
+        await this.mainController.refreshUniverse();
 
         // Récupération des données de la planète
         const planetId = Number(target.getAttribute('data-planetid'));
@@ -172,7 +155,7 @@ export default class UniverseController {
       dialog.style.display = 'none';
 
       // Récupération de l'univers mis à jour
-      this.universe = await this.getUniverse(this.universe.id);
+      await this.mainController.refreshUniverse();
     });
 
     confirmDialog.addEventListener('click', async (event) => {
@@ -197,7 +180,7 @@ export default class UniverseController {
       dialog.style.display = 'none';
 
       // Récupération de l'univers mis à jour
-      this.universe = await this.getUniverse(this.universe.id);
+      await this.mainController.refreshUniverse();
     });
   }
 }

@@ -277,7 +277,6 @@ class FightController extends BaseController {
     $resourceController->addCostsUnitsToResources($resources, $disableUnits);
   }
 
-
   /**
    * Calcul des récompenses en cas de victoire de la planète attaquante
    *
