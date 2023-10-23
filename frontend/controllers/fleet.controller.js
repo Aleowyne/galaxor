@@ -143,6 +143,11 @@ export default class UnitController {
             .map((unit) => unit.id));
         });
 
+        if (attackUnits.length === 0) {
+          this.mainController.displayErrorAlert('Aucune unité attaquante sélectionnée');
+          return;
+        }
+
         const bodyRequest = {
           defense_planet: this.selectedPlanetId,
           attack_units: attackUnits,

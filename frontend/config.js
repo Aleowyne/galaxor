@@ -7,6 +7,7 @@ export default class Config {
     research: 'frontend/templates/research.html',
     unit: 'frontend/templates/unit.html',
     fleet: 'frontend/templates/fleet.html',
+    fight: 'frontend/templates/fight.html',
   };
 
   /**

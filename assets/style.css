@@ -238,7 +238,6 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   width: auto;
 }
 
@@ -393,6 +392,43 @@ body {
 .fleet-form-btn {
   margin-top: 10px;
   text-align: center;
+}
+
+/* Combat */
+.fight {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+}
+
+#fight-content {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0px;
+  width: 100%;
+}
+
+.fight-item {
+  list-style: none;
+}
+
+#fight-list {
+  width: 20%;
+  text-align: center;
+}
+
+.fight-planet {
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+#fight-report {
+  width: 20%;
+
+  & p {
+    margin-top: 10px;
+  }
 }
 
 /* Page 404 */

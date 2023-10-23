@@ -5,7 +5,7 @@ export default class ItemView {
 
   /**
    * Initialisation de la page
-   * @param {ItemModel} items Liste des items
+   * @param {ItemModel[]} items Liste des items
    * @returns {Promise<Node>} Noeud HTML de la page
    */
   async init(items) {
