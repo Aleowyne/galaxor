@@ -1,25 +1,25 @@
 <template>
   <div class="item">
     <h1>Structures</h1>
-    <div id="item-list" class="item-table">
-      <div class="item-table-row">
-        <div>
-          <img class="item-image" src="" alt="">
+    <div class="item-list">
+      <div class="item-row">
+        <div class="item-image">
+          <img src="{{imageUrl}}" alt="{{imageTxt}}">
         </div>
-        <div class="item-txt">
-          <p class="item-name"></p>
-          <p>Niveau actuel : <span class="item-lvl"></span></p>
-          <p class="item-cost-row">
-            <span class="item-cost-name"></span> : <span class="item-cost-qty"></span>
-          </p>
+        <div class="item-description">
+          <p class="item-name">{{name}}</p>
+          <p>Niveau actuel : <span class="item-level">{{level}}</span></p>
+          <ul class="item-cost-list">
+            <li class="item-cost-resource">{{resourceName}} : {{resourceQuantity}}</li>
+          </ul>
         </div>
         <div class="item-action">
           <button class="item-build-btn btn"></button>
         </div>
         <div class="item-prerequisite-banner">
-          <p class="item-prerequisite-row">
-            <img class="item-icon" src="./assets/warning_icon.png" alt="Icône d'alerte"> <span class="item-prerequisite-name"></span> - Niveau <span class="item-prerequisite-lvl"></span>
-          </p>
+          <ul class="item-prerequisite-list">
+            <li class="item-prerequisite"><img class="item-icon" src="./assets/warning_icon.png" alt="Icône d'alerte"> <span class="item-prerequisite-name">{{itemPrerequisiteName}}</span> - Niveau {{itemPrerequisiteLevel}}</li>
+          </ul>
         </div>
       </div>
     </div>

@@ -27,6 +27,8 @@ export default class FightController {
    * Traitement
    */
   process() {
+    this.view.target = document;
+
     // Sélection d'un combat
     this.addEventSelectFight();
   }
@@ -70,7 +72,6 @@ export default class FightController {
 
         // Affichage du rapport
         if (fight) {
-          this.view.target = document;
           this.view.setReport(fight);
         }
       });

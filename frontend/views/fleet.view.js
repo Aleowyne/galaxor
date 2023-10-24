@@ -8,70 +8,59 @@ export default class UnitView extends ItemView {
    * @returns {Promise<Node>} Noeud HTML de la page
    */
   async init(unitTypes, universe) {
-    const template = await super.init(unitTypes);
+    await super.init(unitTypes);
 
     // Liste des galaxies
-    this.setGalaxies(universe.galaxies, template);
+    this.setGalaxies(universe.galaxies);
 
     // Liste des systèmes solaires
     const { solarSystems } = universe.galaxies[0];
-    this.setSolarSystems(solarSystems, template);
+    this.setSolarSystems(solarSystems);
 
     // Liste des planètes
     const { planets } = solarSystems[0];
-    this.setPlanets(planets, template);
+    this.setPlanets(planets);
 
-    return template;
+    return this.target;
   }
 
   /**
    * Affichage des types d'unités
    * @param {UnitTypeModel[]} unitTypes Liste des types d'unités
-   * @param {Node} target Noeud HTML
    */
-  setItems(unitTypes, target = document) {
-    const fleetList = target.getElementById('fleet-list');
-    const fleetTemplateRow = target.querySelector('.fleet-table-row');
-    const fleetRows = target.querySelectorAll('.fleet-table-row');
+  setItems(unitTypes) {
+    const fleetList = this.target.querySelector('.fleet-list');
+    const fleetTemplate = this.mainView.template.querySelector('.fleet-row');
 
-    fleetTemplateRow.remove();
+    fleetList.innerHTML = '';
+
+    if (!unitTypes.length) {
+      fleetList.remove();
+      return;
+    }
 
     unitTypes.forEach((unitType) => {
-      const fleetRow = fleetTemplateRow.cloneNode(true);
-      const fleetImage = fleetRow.querySelector('.fleet-image');
-      const fleetNameTxt = fleetRow.querySelector('.fleet-name');
-      const fleetQtyTxt = fleetRow.querySelector('.fleet-qty');
-      const fleetLabel = fleetRow.querySelector('.fleet-form-unit-label');
-      const fleetInput = fleetRow.querySelector('.fleet-form-unit-input');
-
+      const fleetRow = fleetTemplate.cloneNode(true);
       const nbUnits = unitType.units.filter((unit) => !unit.createInProgress).length;
 
-      fleetImage.src = unitType.imgUrl;
-      fleetImage.alt = unitType.name;
-      fleetQtyTxt.innerHTML = nbUnits;
-      fleetNameTxt.innerHTML = unitType.name;
-
-      // Nombre d'unités à envoyer
-      fleetLabel.htmlFor = `fleet-${unitType.itemId.toLowerCase()}`;
-      fleetInput.id = fleetLabel.htmlFor;
-      fleetInput.max = nbUnits;
-      fleetInput.value = 0;
+      fleetRow.innerHTML = fleetTemplate.innerHTML
+        .replace('{{name}}', unitType.name)
+        .replace('{{quantity}}', nbUnits)
+        .replace('{{imageUrl}}', unitType.imgUrl)
+        .replace('{{imageTxt}}', unitType.name)
+        .replace('{{sendUnitMax}}', nbUnits)
+        .replaceAll('{{sendUnitId}}', unitType.itemId.toLowerCase());
 
       fleetList.appendChild(fleetRow);
-    });
-
-    fleetRows.forEach((fleetRow) => {
-      fleetRow.remove();
     });
   }
 
   /**
    * Affichage des galaxies
    * @param {GalaxyModel[]} galaxies Liste des galaxies
-   * @param {Node} target Noeud HTML
    */
-  async setGalaxies(galaxies, target = document) {
-    const galaxySelect = target.getElementById('fleet-galaxy');
+  async setGalaxies(galaxies) {
+    const galaxySelect = this.target.getElementById('fleet-galaxy');
 
     galaxySelect.innerHTML = '';
 
@@ -87,10 +76,9 @@ export default class UnitView extends ItemView {
   /**
    * Affichage des systèmes solaires en fonction de la galaxie choisie
    * @param {SolarSystemModel[]} solarSystems Liste des systèmes solaires
-   * @param {Node} target Noeud HTML
    */
-  async setSolarSystems(solarSystems, target = document) {
-    const solarSystemSelect = target.getElementById('fleet-solarsystem');
+  async setSolarSystems(solarSystems) {
+    const solarSystemSelect = this.target.getElementById('fleet-solarsystem');
 
     solarSystemSelect.innerHTML = '';
 
@@ -106,10 +94,9 @@ export default class UnitView extends ItemView {
   /**
    * Affichage des planètes en fonction du système solaire choisi
    * @param {PlanetModel[]} planets Liste des planètes
-   * @param {Node} target Noeud HTML
    */
-  async setPlanets(planets, target = document) {
-    const planetSelect = target.getElementById('fleet-planet');
+  async setPlanets(planets) {
+    const planetSelect = this.target.getElementById('fleet-planet');
 
     planetSelect.innerHTML = '';
 

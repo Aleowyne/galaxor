@@ -1,6 +1,7 @@
 export default class ItemView {
   constructor(mainView) {
     this.mainView = mainView;
+    this.target = this.mainView.template.cloneNode(true);
   }
 
   /**
@@ -9,37 +10,36 @@ export default class ItemView {
    * @returns {Promise<Node>} Noeud HTML de la page
    */
   async init(items) {
-    const { template } = this.mainView;
-
     // Liste des items
-    this.setItems(items, template);
+    this.setItems(items);
 
-    return template;
+    return this.target;
   }
 
   /**
    * Affichage des items
    * @param {ItemModel[]} items Liste des items
-   * @param {Node} target Noeud HTML
    */
-  setItems(items, target = document) {
-    const itemList = target.getElementById('item-list');
-    const itemTemplateRow = target.querySelector('.item-table-row');
+  setItems(items) {
+    const itemList = this.target.querySelector('.item-list');
+    const itemTemplate = this.mainView.template.querySelector('.item-row');
+    itemList.innerHTML = '';
 
-    itemTemplateRow.remove();
+    if (!items.length) {
+      itemList.remove();
+      return;
+    }
 
     items.forEach((item) => {
-      const itemRow = itemTemplateRow.cloneNode(true);
-      const itemImage = itemRow.querySelector('.item-image');
-      const itemNameTxt = itemRow.querySelector('.item-name');
-      const itemLvlTxt = itemRow.querySelector('.item-lvl');
+      const itemRow = itemTemplate.cloneNode(true);
+
+      itemRow.innerHTML = itemTemplate.innerHTML
+        .replace('{{name}}', item.name)
+        .replace('{{level}}', item.level)
+        .replace('{{imageUrl}}', item.imgUrl)
+        .replace('{{imageTxt}}', item.name);
+
       const itemBuildBtn = itemRow.querySelector('.item-build-btn');
-
-      itemImage.src = item.imgUrl;
-      itemImage.alt = item.name;
-      itemLvlTxt.innerHTML = item.level;
-      itemNameTxt.innerHTML = item.name;
-
       const currentDate = new Date();
 
       if (item.upgradeInProgress) {
@@ -78,8 +78,8 @@ export default class ItemView {
    * @param {number} itemIndex Position de l'item sur la page
    */
   refreshItemFinishBuild(item, itemIndex) {
-    const itemRow = document.querySelectorAll('.item-table-row')[itemIndex];
-    const itemLvlTxt = itemRow.querySelector('.item-lvl');
+    const itemRow = this.target.querySelectorAll('.item-row')[itemIndex];
+    const itemLvlTxt = itemRow.querySelector('.item-level');
     const itemBuildBtn = itemRow.querySelector('.item-build-btn');
 
     itemLvlTxt.innerHTML = item.level;
@@ -97,23 +97,23 @@ export default class ItemView {
    * @param {Node} target Noeud HTML
    */
   setCosts(costs, target) {
-    const costTemplateRow = target.querySelector('.item-cost-row');
-    const costRows = target.querySelectorAll('.item-cost-row');
-    const itemTxt = target.querySelector('.item-txt');
+    const costList = target.querySelector('.item-cost-list');
+    const costTemplate = this.mainView.template.querySelector('.item-cost-resource');
+    costList.innerHTML = '';
+
+    if (!costs.length) {
+      costList.remove();
+      return;
+    }
 
     costs.forEach((cost) => {
-      const costRow = costTemplateRow.cloneNode(true);
-      const costNameTxt = costRow.querySelector('.item-cost-name');
-      const costQuantityTxt = costRow.querySelector('.item-cost-qty');
+      const costRow = costTemplate.cloneNode(true);
 
-      costNameTxt.innerHTML = cost.name;
-      costQuantityTxt.innerHTML = cost.quantity;
+      costRow.innerHTML = costTemplate.innerHTML
+        .replace('{{resourceName}}', cost.name)
+        .replace('{{resourceQuantity}}', cost.quantity);
 
-      itemTxt.appendChild(costRow);
-    });
-
-    costRows.forEach((costRow) => {
-      costRow.remove();
+      costList.appendChild(costRow);
     });
   }
 
@@ -123,23 +123,23 @@ export default class ItemView {
    * @param {Node} target Noeud HTML
    */
   setPrerequisites(prerequisites, target) {
-    const prerequisiteTemplateRow = target.querySelector('.item-prerequisite-row');
-    const prerequisiteRows = target.querySelectorAll('.item-prerequisite-row');
-    const prerequisiteList = target.querySelector('.item-prerequisite-banner');
+    const prerequisiteList = target.querySelector('.item-prerequisite-list');
+    const prerequisiteTemplate = this.mainView.template.querySelector('.item-prerequisite');
+    prerequisiteList.innerHTML = '';
+
+    if (!prerequisites.length) {
+      prerequisiteList.remove();
+      return;
+    }
 
     prerequisites.forEach((prerequisite) => {
-      const prerequisiteRow = prerequisiteTemplateRow.cloneNode(true);
-      const prerequisiteNameTxt = prerequisiteRow.querySelector('.item-prerequisite-name');
-      const prerequisiteLvlTxt = prerequisiteRow.querySelector('.item-prerequisite-lvl');
+      const prerequisiteRow = prerequisiteTemplate.cloneNode(true);
 
-      prerequisiteNameTxt.innerHTML = prerequisite.name;
-      prerequisiteLvlTxt.innerHTML = prerequisite.level;
+      prerequisiteRow.innerHTML = prerequisiteTemplate.innerHTML
+        .replace('{{itemPrerequisiteName}}', prerequisite.name)
+        .replace('{{itemPrerequisiteLevel}}', prerequisite.level);
 
       prerequisiteList.appendChild(prerequisiteRow);
-    });
-
-    prerequisiteRows.forEach((prerequisiteRow) => {
-      prerequisiteRow.remove();
     });
   }
 

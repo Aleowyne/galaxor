@@ -19,6 +19,7 @@ export default class StructureController {
 
     // Récupération des structures de la planète
     this.structures = await this.getStructuresPlanet();
+
     return this.view.init(this.structures);
   }
 
@@ -26,6 +27,8 @@ export default class StructureController {
    * Traitement
    */
   process() {
+    this.view.target = document;
+
     // Gestion de la construction
     this.addEventBuild();
   }

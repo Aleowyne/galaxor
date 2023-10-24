@@ -4,26 +4,28 @@ export default class UnitView extends ItemView {
   /**
    * Affichage des types d'unités
    * @param {UnitTypeModel[]} unitTypes Liste des types d'unités
-   * @param {Node} target Noeud HTML
    */
-  setItems(unitTypes, target = document) {
-    const itemList = target.getElementById('item-list');
-    const itemTemplateRow = target.querySelector('.item-table-row');
+  setItems(unitTypes) {
+    const itemList = this.target.querySelector('.item-list');
+    const itemTemplate = this.mainView.template.querySelector('.item-row');
+    itemList.innerHTML = '';
 
-    itemTemplateRow.remove();
+    if (!unitTypes.length) {
+      itemList.remove();
+      return;
+    }
 
     unitTypes.forEach((unitType) => {
-      const itemRow = itemTemplateRow.cloneNode(true);
-      const itemImage = itemRow.querySelector('.item-image');
-      const itemNameTxt = itemRow.querySelector('.item-name');
-      const itemQtyTxt = itemRow.querySelector('.item-qty');
+      const itemRow = itemTemplate.cloneNode(true);
+      const nbUnits = unitType.units.filter((unit) => !unit.createInProgress).length;
+
+      itemRow.innerHTML = itemTemplate.innerHTML
+        .replace('{{name}}', unitType.name)
+        .replace('{{quantity}}', nbUnits)
+        .replace('{{imageUrl}}', unitType.imgUrl)
+        .replace('{{imageTxt}}', unitType.name);
+
       const itemBuildBtn = itemRow.querySelector('.item-build-btn');
-
-      itemImage.src = unitType.imgUrl;
-      itemImage.alt = unitType.name;
-      itemQtyTxt.innerHTML = unitType.units.filter((unit) => !unit.createInProgress).length;
-      itemNameTxt.innerHTML = unitType.name;
-
       const currentDate = new Date();
 
       const unit = unitType.units.find((unit) => unit.createInProgress);
@@ -64,8 +66,8 @@ export default class UnitView extends ItemView {
    * @param {number} itemIndex Position du type d'unité sur la page
    */
   refreshItemFinishBuild(unitType, itemIndex) {
-    const itemRow = document.querySelectorAll('.item-table-row')[itemIndex];
-    const itemQtyTxt = itemRow.querySelector('.item-qty');
+    const itemRow = this.target.querySelectorAll('.item-row')[itemIndex];
+    const itemQtyTxt = itemRow.querySelector('.item-qantity');
     const itemBuildBtn = itemRow.querySelector('.item-build-btn');
 
     itemQtyTxt.innerHTML = unitType.units.length;

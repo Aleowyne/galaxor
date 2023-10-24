@@ -28,6 +28,8 @@ export default class UniverseController {
    * Traitement
    */
   process() {
+    this.view.target = document;
+
     // Sélection d'une galaxie : mise à jour de la liste des systèmes solaires
     this.addEventSelectGalaxy();
 

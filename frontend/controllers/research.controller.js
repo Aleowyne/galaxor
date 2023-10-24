@@ -19,6 +19,7 @@ export default class ResearchController {
 
     // Récupération des recherches de la planète
     this.researches = await this.getResearchesPlanet();
+
     return this.view.init(this.researches);
   }
 
@@ -26,6 +27,8 @@ export default class ResearchController {
    * Traitement
    */
   process() {
+    this.view.target = document;
+
     // Gestion de la construction
     this.addEventBuild();
   }

@@ -1,6 +1,7 @@
 export default class UniverseView {
   constructor(mainView) {
     this.mainView = mainView;
+    this.target = this.mainView.template.cloneNode(true);
   }
 
   /**
@@ -9,29 +10,26 @@ export default class UniverseView {
    * @returns {Promise<Node>} Noeud HTML de la page
    */
   async init(universe) {
-    const { template } = this.mainView;
-
     // Liste des galaxies
-    this.setGalaxies(universe.galaxies, template);
+    this.setGalaxies(universe.galaxies);
 
     // Liste des systèmes solaires
     const { solarSystems } = universe.galaxies[0];
-    this.setSolarSystems(solarSystems, template);
+    this.setSolarSystems(solarSystems);
 
     // Liste des planètes
     const { planets } = solarSystems[0];
-    this.setPlanets(planets, template);
+    this.setPlanets(planets);
 
-    return template;
+    return this.target;
   }
 
   /**
    * Affichage des galaxies
    * @param {GalaxyModel[]} galaxies Liste des galaxies
-   * @param {Node} target Noeud HTML
    */
-  async setGalaxies(galaxies, target = document) {
-    const galaxySelect = target.getElementById('galaxy-list');
+  async setGalaxies(galaxies) {
+    const galaxySelect = this.target.getElementById('galaxy-list');
 
     galaxySelect.innerHTML = '';
 
@@ -47,10 +45,9 @@ export default class UniverseView {
   /**
    * Affichage des systèmes solaires en fonction de la galaxie choisie
    * @param {SolarSystemModel[]} solarSystems Liste des systèmes solaires
-   * @param {Node} target Noeud HTML
    */
-  async setSolarSystems(solarSystems, target = document) {
-    const solarSystemSelect = target.getElementById('solarsystem-list');
+  async setSolarSystems(solarSystems) {
+    const solarSystemSelect = this.target.getElementById('solarsystem-list');
 
     solarSystemSelect.innerHTML = '';
 
@@ -66,10 +63,9 @@ export default class UniverseView {
   /**
    * Affichage des planètes en fonction du système solaire choisi
    * @param {PlanetModel[]} planets Liste des planètes
-   * @param {Node} target Noeud HTML
    */
-  async setPlanets(planets, target = document) {
-    const planetTableBody = target.getElementById('planet-list');
+  async setPlanets(planets) {
+    const planetTableBody = this.target.getElementById('planet-list');
 
     planetTableBody.innerHTML = '';
 

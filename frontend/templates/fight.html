@@ -1,32 +1,32 @@
 <template>
   <div class="fight">
     <h1>Rapports de combat</h1>
-    <div id="fight-content">
+    <div class="fight-content">
       <ul id="fight-list">
-        <li class="fight-planet fight-item">
-          {{dateFight}} {{timeFight}} - {{opponentPlanetName}}
+        <li class="fight-item">
+          {{fightDate}} {{fightTime}} - {{opponentPlanetName}}
         </li>
       </ul>
       <div id="fight-report">
-        <p>Rapport de combat du {{dateFight}} à {{timeFight}}</p>
+        <p>Rapport de combat du {{fightDate}} à {{fightTime}}</p>
         <p>Planète : {{opponentPlanetName}}</p>
         <p>{{fightResult}}</p>
         <p>Attaquants :</p>
         <ul id="fight-attack">
-          <li class="fight-attack-item fight-item">
-            {{unitQuantity}} {{unitName}}
+          <li class="fight-item">
+            {{quantity}} {{name}}
           </li>
         </ul>
         <p>Défenseurs :</p>
         <ul id="fight-defense">
-          <li class="fight-defense-item fight-item">
-            {{unitQuantity}} {{unitName}}
+          <li class="fight-item">
+            {{quantity}} {{name}}
           </li>
         </ul>
         <p>Les transporteurs ramènent :</p>
         <ul id="fight-resource">
-          <li class="fight-resource-item fight-item">
-            {{resourceName}} : {{resourceQuantity}}
+          <li class="fight-item">
+            {{name}} : {{quantity}}
           </li>
         </ul>
       </div>

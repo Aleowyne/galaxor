@@ -32,6 +32,8 @@ export default class UnitController {
    * Traitement
    */
   process() {
+    this.view.target = document;
+
     // Sélection d'une galaxie : mise à jour de la liste des systèmes solaires
     this.addEventSelectGalaxy();
 
@@ -122,7 +124,7 @@ export default class UnitController {
    * Gestion de l'évènement "attaque"
    */
   addEventFight() {
-    const fightBtn = document.getElementById('fight-btn');
+    const fightBtn = document.querySelector('.fight-btn');
     const fleetForm = document.querySelector('.fleet-form');
 
     fightBtn.addEventListener('click', async (event) => {

@@ -27,6 +27,8 @@ export default class UnitController {
    * Traitement
    */
   process() {
+    this.view.target = document;
+
     // Gestion de la construction
     this.addEventBuild();
   }

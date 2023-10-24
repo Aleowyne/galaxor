@@ -39,6 +39,10 @@ body {
   border: solid 1px rgba(255, 255, 255, .2);
 }
 
+li {
+  list-style: none;
+}
+
 /* Boutons */
 .btn {
   padding: 7px 20px;
@@ -114,7 +118,6 @@ body {
   display: flex;
   justify-content: right;
   align-items: center;
-  list-style: none;
 }
 
 .header-navbar-planet {
@@ -281,24 +284,30 @@ body {
   width: auto;
 }
 
-.item-table {
+.item-list {
   width: 50%;
 }
 
-.item-table-row {
+.item-row {
   display: grid;
   grid-template-columns: 1fr 3fr 1fr;
   border-bottom: solid 1px rgba(255, 255, 255, .2);
-  margin-top: 20px;
+  padding: 20px 0px;
 }
 
 .item-image {
   grid-area: 1 / 1 / 2 / 2;
-  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 10px;
+
+  & img {
+    width: 100px;
+  }
 }
 
-.item-txt {
+.item-description {
   grid-area: 1 / 2 / 2 / 3;
   padding: 10px;
 }
@@ -319,20 +328,19 @@ body {
 
 .item-prerequisite-banner {
   grid-area: 2 / 2 / 3 / 4;
-  padding: 10px;
 }
 
-.item-prerequisite-row {
+.item-prerequisite-list {
   padding: 10px;
   border: solid 1px rgba(255, 255, 255, .2);
 }
 
-.item-icon {
-  vertical-align: text-bottom;
-}
-
 .item-prerequisite-name {
   font-weight: bold;
+}
+
+.item-icon {
+  vertical-align: text-bottom;
 }
 
 /* Page "Chantier naval" */
@@ -349,7 +357,7 @@ body {
   align-items: center;
 }
 
-.fleet-table {
+.fleet-list {
   display: flex;
   flex-wrap: wrap;
   row-gap: 30px;
@@ -357,7 +365,7 @@ body {
   margin-top: 20px;
 }
 
-.fleet-table-row {
+.fleet-row {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -402,25 +410,21 @@ body {
   height: 100vh;
 }
 
-#fight-content {
+.fight-content {
   display: flex;
   justify-content: center;
   margin: 10px 0px;
   width: 100%;
 }
 
-.fight-item {
-  list-style: none;
-}
-
 #fight-list {
   width: 20%;
   text-align: center;
-}
 
-.fight-planet {
-  margin-top: 10px;
-  cursor: pointer;
+  & .fight-item {
+    margin-top: 10px;
+    cursor: pointer;
+  }
 }
 
 #fight-report {

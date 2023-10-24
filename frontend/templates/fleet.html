@@ -3,20 +3,19 @@
     <h1>Flottes</h1>
 
     <form class="fleet-form">
-      <div id="fleet-list" class="fleet-table">
-        <div class="fleet-table-row">
-          <img class="fleet-image" src="" alt="">
-          <p class="fleet-name"></p>
-          <p>Disponibles : <span class="fleet-qty"></span></p>
-
+      <div class="fleet-list">
+        <div class="fleet-row">
+          <img class="fleet-image" src="{{imageUrl}}" alt="{{imageTxt}}">
+          <p class="fleet-name">{{name}}</p>
+          <p>Disponibles : <span class="fleet-quantity">{{quantity}}</span></p>
           <p class="fleet-send-unit">
-            <label class="fleet-form-unit-label">Nombre d'unités à envoyer :</label><br />
-            <input type="number" class="fleet-form-unit-input input" value="0" min="0">
+            <label for="fleet-{{sendUnitId}}" class="fleet-form-unit-label">Nombre d'unités à envoyer :</label><br />
+            <input id="fleet-{{sendUnitId}}" type="number" class="fleet-form-unit-input input" value="0" min="0" max="{{sendUnitMax}}">
           </p>
         </div>
       </div>
 
-      <div class="fleet-select">
+      <div class=" fleet-select">
         <p>
           <label for="fleet-galaxy" class="fleet-form-label">Galaxie :</label>
           <select id="fleet-galaxy" class="fleet-form-select select" required="required">
@@ -36,7 +35,7 @@
         </p>
 
         <p class="fleet-form-btn">
-          <button id="fight-btn" class="btn">Attaquer</button>
+          <button class="fight-btn btn">Attaquer</button>
         </p>
       </div>
     </form>

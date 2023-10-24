@@ -1,6 +1,7 @@
 export default class ErrorView {
   constructor(mainView) {
     this.mainView = mainView;
+    this.target = this.mainView.template.cloneNode(true);
   }
 
   /**
@@ -8,6 +9,6 @@ export default class ErrorView {
    * @returns {Promise<Node>} Noeud HTML de la page
    */
   async init() {
-    return this.mainView.template;
+    return this.target;
   }
 }
