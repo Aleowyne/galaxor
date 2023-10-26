@@ -136,7 +136,7 @@ li {
 }
 
 .header-navbar-img {
-  vertical-align: text-bottom;
+  vertical-align: bottom;
   width: 20px;
 }
 
@@ -176,8 +176,8 @@ li {
 }
 
 .home-tab-label {
-  width: 100px;
-  padding: 15px 25px 15px 25px;
+  width: 120px;
+  padding: 15px 10px;
   margin-left: 10px;
   margin-right: 10px;
   text-align: center;
