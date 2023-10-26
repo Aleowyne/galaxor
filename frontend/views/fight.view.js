@@ -24,6 +24,14 @@ export default class FightView {
     const fightList = this.target.getElementById('fight-list');
     const fightTemplate = this.mainView.template.querySelector('#fight-list .fight-item');
 
+    if (!fights.length) {
+      const fightReport = this.target.getElementById('fight-report');
+
+      fightList.remove();
+      fightReport.remove();
+      return;
+    }
+
     fightList.innerHTML = '';
 
     fights.forEach((fight) => {

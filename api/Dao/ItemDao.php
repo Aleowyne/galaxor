@@ -23,7 +23,7 @@ class ItemDao extends Database {
 
     $result = $this->select(
       "SELECT id AS item_id, name AS item_name, type AS item_type, build_time,
-              attack_point, defense_point, freight_capacity
+              attack_point, defense_point, freight_capacity, img_filename
         FROM item
         WHERE id = :item_id
           AND type LIKE :item_type",
@@ -47,7 +47,7 @@ class ItemDao extends Database {
 
     $result = $this->select(
       "SELECT id AS item_id, name AS item_name, type AS item_type, build_time,
-              attack_point, defense_point, freight_capacity
+              attack_point, defense_point, freight_capacity, img_filename
         FROM item
         WHERE type LIKE :item_type",
       $params
@@ -75,7 +75,7 @@ class ItemDao extends Database {
     $result = $this->select(
       "SELECT pi.item_id, i.name AS item_name, i.type AS item_type, pi.level,
               pi.upgrade_in_progress, pi.end_time_upgrade, i.build_time,
-              i.attack_point, i.defense_point, i.freight_capacity
+              i.attack_point, i.defense_point, i.freight_capacity, i.img_filename
         FROM planet_item AS pi
         INNER JOIN item AS i
           ON pi.item_id = i.id
@@ -108,7 +108,7 @@ class ItemDao extends Database {
     $result = $this->select(
       "SELECT pi.item_id, i.name AS item_name, i.type AS item_type, pi.level,
               pi.upgrade_in_progress, pi.end_time_upgrade, i.build_time,
-              i.attack_point, i.defense_point, i.freight_capacity
+              i.attack_point, i.defense_point, i.freight_capacity, i.img_filename
         FROM planet_item AS pi
         INNER JOIN item AS i
           ON pi.item_id = i.id

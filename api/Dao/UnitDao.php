@@ -20,7 +20,7 @@ class UnitDao extends Database {
     $result = $this->select(
       "SELECT pu.id, pu.item_id, i.name AS item_name, i.type AS item_type,
               pu.create_in_progress, pu.end_time_create, i.build_time,
-              i.attack_point, i.defense_point, i.freight_capacity
+              i.attack_point, i.defense_point, i.freight_capacity, i.img_filename
         FROM planet_unit AS pu
         INNER JOIN item AS i
           ON pu.item_id = i.id
@@ -47,7 +47,7 @@ class UnitDao extends Database {
     $result = $this->select(
       "SELECT pu.id, pu.item_id, i.name AS item_name, i.type AS item_type,
               pu.create_in_progress, pu.end_time_create, i.build_time,
-              i.attack_point, i.defense_point, i.freight_capacity
+              i.attack_point, i.defense_point, i.freight_capacity, i.img_filename
         FROM planet_unit AS pu
         INNER JOIN item AS i
           ON pu.item_id = i.id

@@ -35,6 +35,7 @@ class UnitModel extends ItemModel {
       "attack_point" => $this->attackPoint,
       "defense_point" => $this->defensePoint,
       "freight_capacity" => $this->freightCapacity,
+      "img_filename" => $this->imgFilename,
       "create_in_progress" => $this->createInProgress,
       "end_time_create" => $this->endTimeCreate
     ];
@@ -55,6 +56,7 @@ class UnitModel extends ItemModel {
       "attack_point" => $this->attackPoint,
       "defense_point" => $this->defensePoint,
       "freight_capacity" => $this->freightCapacity,
+      "img_filename" => $this->imgFilename,
       "costs" => array_map(function (CostModel $cost) {
         return $cost->toArray();
       }, $this->costs),

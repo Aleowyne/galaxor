@@ -11,6 +11,7 @@ class ItemModel {
   public string|int $attackPoint;
   public string|int $defensePoint;
   public string|int $freightCapacity;
+  public string $imgFilename;
   public bool $upgradeInProgress;
   public string $endTimeUpgrade;
   /** @var CostModel[] $costs **/
@@ -32,6 +33,7 @@ class ItemModel {
     $this->attackPoint = $item["attack_point"] ?? 0;
     $this->defensePoint = $item["defense_point"] ?? 0;
     $this->freightCapacity = $item["freight_capacity"] ?? 0;
+    $this->imgFilename = $item["img_filename"] ?? "";
     $this->upgradeInProgress = $item["upgrade_in_progress"] ?? false;
     $this->endTimeUpgrade = $item["end_time_upgrade"] ?? "";
     $this->costs = [];
@@ -52,6 +54,7 @@ class ItemModel {
       "attack_point" => $this->attackPoint,
       "defense_point" => $this->defensePoint,
       "freight_capacity" => $this->freightCapacity,
+      "img_filename" => $this->imgFilename,
       "upgrade_in_progress" => $this->upgradeInProgress,
       "end_time_upgrade" => $this->endTimeUpgrade,
       "costs" => array_map(function (CostModel $cost) {

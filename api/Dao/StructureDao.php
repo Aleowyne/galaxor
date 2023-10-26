@@ -21,7 +21,7 @@ class StructureDao extends Database {
     $result = $this->select(
       "SELECT pi.item_id, i.name AS item_name, pi.level,
               pi.upgrade_in_progress, pi.end_time_upgrade, i.build_time,
-              i.attack_point, i.defense_point,
+              i.attack_point, i.defense_point, i.img_filename,
               ip.resource_id, ip.production
         FROM planet_item AS pi
         INNER JOIN item AS i
